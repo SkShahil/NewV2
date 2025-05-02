@@ -1,0 +1,123 @@
+# **App Name**: MindMash
+
+## Core Features:
+
+- AI Quiz Generation: Generate quizzes using the Gemini Flash API based on a user-provided topic. The LLM will use a tool to choose the correct quiz type (Multiple Choice, True/False, or Short Answer) for the given topic.
+- Challenge-a-Friend Mode: Allow users to challenge friends by creating a unique link for a specific quiz, storing challenge metadata (sender, receiver, score status) in Firestore.
+- User Authentication & Data Storage: Implement user authentication using Firebase Auth (email/password, Google Sign-In) and store user data, quiz attempts, and roles in Firestore.
+
+## Style Guidelines:
+
+- Primary color: A deep Indigo (#4B0082) to represent intelligence and focus.
+- Secondary color: A light gray (#F5F5F5) for a clean and modern background.
+- Accent: Teal (#008080) to highlight interactive elements and calls to action.
+- Clean and modern typography for readability.
+- Use sharp and minimalist icons.
+- A clean, card-based layout.
+- Subtle transitions and animations to enhance user experience.
+
+## Original User Request:
+Build a full-stack quiz web application called MindMash like codechef and hackerrank but different ui with the following detailed features. The tech stack is flexible and should be modern, scalable, and optimized for performance, ease of use, and developer experience. The application must be ready for deployment on Render, use Google Firebase for authentication and database management, and rely on Gemini Flash API for AI-generated quiz content. 
+
+🌟 Core Features
+AI-Powered Quiz Generator
+
+Users input a topic and receive a set of AI-generated quiz questions.
+
+Quiz types: Multiple Choice, True/False, Short Answer.
+
+Powered by the Gemini Flash API (replace OpenAI).
+
+Challenge-a-Friend Mode
+
+Users can challenge others via a unique link.
+
+The link embeds a quiz ID and challenge token.
+
+Text to speech feature enabled by default and can be turned off by pressing f anf j keyboard buttons at the same time with other significant settings suitable for blind and color blind peoples
+
+Offline quiz downloadable option with question bank and answer key of the same quiz test given by the user 
+
+Proper user profile and everything can be shown with the information like first and last name , joined date,birthdate,social links like linkedin or instagram and unique id for adding friends and their reuqest for searching other friends using that id
+
+Both users attempt the same quiz and results are compared.
+
+Store challenge metadata including sender, receiver, and score status.
+
+User Authentication
+
+Email/password and Google Sign-In via Firebase Auth.
+
+Support password recovery and magic link login.
+
+Use Firestore to store user data, attempts, and roles.
+
+Quiz History and Leaderboards
+
+Track attempted quizzes, scores, and time taken.
+
+Leaderboard displays top performers and most active users.
+
+Admin Panel
+
+Admins can manage quizzes, users, and reported issues.
+
+View platform analytics and feedback summaries.
+
+User Feedback
+
+Feedback form for reporting bugs, suggesting features, or general comments.
+
+Categorize feedback by status (new, reviewed, resolved).
+
+📁 Pages
+/
+→ Landing page with call-to-action, intro to MindMash, and login/signup buttons.
+
+/dashboard
+→ Personalized home with quiz history, challenge activity, and quick actions.
+
+/quiz/generate
+→ Form to input topic → sends request to Gemini Flash → displays generated quiz.
+
+/quiz/[id]
+→ The quiz player page. Timed interface with question progress and answer options.
+
+/challenge/create
+→ User selects quiz to challenge a friend. Generates and displays shareable link.
+
+/challenge/[token]
+→ Page to accept a challenge and attempt the linked quiz.
+
+/results/[attemptId]
+→ Results page showing score, answers given, correct ones, and ranking.
+
+/leaderboard
+→ Displays user rankings by score, speed, and accuracy.
+
+/feedback
+→ Submit bugs, suggestions, or general thoughts. View your submitted feedback.
+
+/profile
+→ View and edit profile info, change password, manage authentication methods.
+
+/admin
+→ Admin dashboard with tabs for user management, quiz moderation, feedback, and stats.
+
+📌 Additional Notes
+Use Firebase Firestore to store:
+
+Users, quizzes, quiz attempts, challenges, and feedback.
+
+Deploy to Render with appropriate environment variables:
+
+FIREBASE_API_KEY
+
+FIREBASE_PROJECT_ID
+
+GEMINI_FLASH_API_KEY
+
+Ensure route protection using Firebase tokens for authenticated users and role-based access for admin routes.
+
+Make the app mobile-responsive, modern in UI/UX, and optimized for fast interactions.
+  
