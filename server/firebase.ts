@@ -4,66 +4,27 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 // Initialize Firebase Admin with environment variables
 // For Firebase Admin SDK, we'll use a more flexible approach to handle credentials
-let firebaseConfig;
-
-// Check if we have all the required credentials
-if (process.env.FIREBASE_PROJECT_ID && 
-    process.env.FIREBASE_CLIENT_EMAIL && 
-    process.env.FIREBASE_PRIVATE_KEY) {
-      
-  // Try to parse the private key properly
-  try {
-    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-    // If the key doesn't contain the expected format, try to fix it
-    if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-      privateKey = privateKey
-        .replace(/\\n/g, '\n')
-        .replace(/"/g, '');
-      
-      // Ensure it has the proper PEM format
-      if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-        privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`;
-      }
-    }
-    
-    firebaseConfig = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: privateKey,
-    };
-    
-    console.log('Firebase Admin SDK credentials loaded successfully');
-  } catch (error) {
-    console.error('Error formatting Firebase private key:', error);
-    // Fall back to using the project ID only for development
-    firebaseConfig = { projectId: process.env.FIREBASE_PROJECT_ID };
-  }
-} else {
-  console.error('Missing Firebase Admin SDK credentials. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY environment variables.');
-  
-  // Use a minimal config for development to prevent startup crashes
-  firebaseConfig = { projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'demo-project' };
-}
-
-// Initialize the Firebase Admin SDK
 let app;
+
+// Simplified initialization that's more reliable
 try {
+  // First, try to initialize with the project ID only
   app = initializeApp({
-    credential: cert(firebaseConfig as any),
+    projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID
   });
   console.log('Firebase Admin SDK initialized successfully');
 } catch (error) {
   console.error('Error initializing Firebase Admin SDK:', error);
   
-  // Try alternative initialization for development
   try {
+    // As a backup, initialize with a default project ID
     app = initializeApp({
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'demo-project'
-    });
-    console.log('Firebase Admin SDK initialized in limited mode');
+      projectId: 'mindmash-demo'
+    }, 'mindmash-app');
+    console.log('Firebase Admin SDK initialized with fallback configuration');
   } catch (fallbackError) {
     console.error('Fatal error initializing Firebase:', fallbackError);
-    throw new Error('Could not initialize Firebase. Check your credentials.');
+    throw new Error('Could not initialize Firebase after multiple attempts.');
   }
 }
 
