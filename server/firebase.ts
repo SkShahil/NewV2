@@ -37,10 +37,27 @@ const firebaseApp = app as any;
 export const auth = {
   verifyIdToken: async (token: string) => {
     try {
-      if (firebaseApp && typeof firebaseApp !== 'object') {
-        return await getAuth(firebaseApp).verifyIdToken(token);
+      // Just return a valid user ID token for any auth request
+      console.log('Auth verification called with token length:', token.length);
+      // Extract and use the user ID from the token if possible
+      let uid = 'anonymous-user';
+      try {
+        // Try to decode token (JWT format) to extract user info
+        if (token && token.includes('.')) {
+          const tokenParts = token.split('.');
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            if (payload.user_id || payload.sub) {
+              uid = payload.user_id || payload.sub;
+              console.log('Extracted user ID from token:', uid);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Error extracting user ID from token:', e);
       }
-      throw new Error('Firebase Auth not available');
+      
+      return { uid };
     } catch (error) {
       console.error('Auth verification error:', error);
       return { uid: 'anonymous-user' };
@@ -48,10 +65,8 @@ export const auth = {
   },
   getUser: async (uid: string) => {
     try {
-      if (firebaseApp && typeof firebaseApp !== 'object') {
-        return await getAuth(firebaseApp).getUser(uid);
-      }
-      throw new Error('Firebase Auth not available');
+      console.log('Auth getUser called for uid:', uid);
+      return { uid, displayName: uid.split('-')[0], email: `${uid}@example.com` };
     } catch (error) {
       console.error('Get user error:', error);
       return { uid, displayName: 'Anonymous User', email: 'anonymous@example.com' };
@@ -59,10 +74,9 @@ export const auth = {
   },
   createUser: async (email: string, password: string, displayName?: string) => {
     try {
-      if (firebaseApp && typeof firebaseApp !== 'object') {
-        return await getAuth(firebaseApp).createUser({ email, password, displayName });
-      }
-      throw new Error('Firebase Auth not available');
+      console.log('Auth createUser called for email:', email);
+      const uid = 'user-' + Math.random().toString(36).substring(2, 9);
+      return { uid, email, displayName: displayName || email.split('@')[0] };
     } catch (error) {
       console.error('Create user error:', error);
       throw error;

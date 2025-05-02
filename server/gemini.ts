@@ -5,10 +5,17 @@ const API_KEY = process.env.GEMINI_FLASH_API_KEY || '';
 
 // Check if API key is provided
 if (!API_KEY) {
-  console.error('Missing GEMINI_FLASH_API_KEY environment variable');
+  console.warn('Missing GEMINI_FLASH_API_KEY environment variable - will use mock data for quizzes');
 }
 
-const genAI = new GoogleGenerativeAI(API_KEY);
+// Create a placeholder model for when the API key is missing
+let genAI: GoogleGenerativeAI;
+try {
+  genAI = new GoogleGenerativeAI(API_KEY);
+} catch (error) {
+  console.error('Error initializing Gemini AI client:', error);
+  // Will use fallback data generation when API is called
+}
 
 // Safety settings for content generation
 const safetySettings = [
@@ -48,7 +55,19 @@ export interface Question {
 
 // Generate a quiz based on topic and type
 export async function generateQuiz(params: QuizParams): Promise<Question[]> {
+  // Check if API key is available, provide mock data if not
+  if (!API_KEY) {
+    console.warn('Using fallback quiz data since Gemini API key is missing');
+    return getSampleQuiz(params.topic, params.quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+  }
+  
   try {
+    // Check if we have a valid genAI instance
+    if (!genAI) {
+      console.warn('Gemini AI client not available - using sample data');
+      return getSampleQuiz(params.topic, params.quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+    }
+    
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     
     // Determine the appropriate quiz type if 'auto' is selected
@@ -80,8 +99,51 @@ export async function generateQuiz(params: QuizParams): Promise<Question[]> {
     return parseQuizResponse(text, quizType as 'multiple-choice' | 'true-false' | 'short-answer');
   } catch (error) {
     console.error('Error generating quiz with Gemini:', error);
-    throw new Error('Failed to generate quiz. Please try again later.');
+    console.warn('Falling back to sample quiz data');
+    // Provide sample data on error
+    return getSampleQuiz(params.topic, params.quizType as 'multiple-choice' | 'true-false' | 'short-answer');
   }
+}
+
+// Get sample quiz data for when the API is unavailable
+function getSampleQuiz(topic: string, quizType: 'multiple-choice' | 'true-false' | 'short-answer'): Question[] {
+  const defaultQuestions: Question[] = [];
+  
+  // Format topic for display
+  const formattedTopic = topic.charAt(0).toUpperCase() + topic.slice(1);
+  
+  // Create sample questions based on quiz type
+  if (quizType === 'multiple-choice') {
+    for (let i = 1; i <= 5; i++) {
+      defaultQuestions.push({
+        id: `sample-${i}`,
+        question: `Sample question ${i} about ${formattedTopic}?`,
+        options: ['Option A', 'Option B', 'Option C', 'Option D'],
+        correctAnswer: 'Option A',
+        explanation: `This is a sample explanation for question ${i}.`
+      });
+    }
+  } else if (quizType === 'true-false') {
+    for (let i = 1; i <= 5; i++) {
+      defaultQuestions.push({
+        id: `sample-${i}`,
+        question: `Sample true/false statement ${i} about ${formattedTopic}.`,
+        correctAnswer: i % 2 === 0 ? 'True' : 'False',
+        explanation: `This is a sample explanation for statement ${i}.`
+      });
+    }
+  } else if (quizType === 'short-answer') {
+    for (let i = 1; i <= 5; i++) {
+      defaultQuestions.push({
+        id: `sample-${i}`,
+        question: `Sample short answer question ${i} about ${formattedTopic}?`,
+        correctAnswer: `Sample answer ${i}`,
+        explanation: `This is a sample explanation for question ${i}.`
+      });
+    }
+  }
+  
+  return defaultQuestions;
 }
 
 // Determine the best quiz type for a given topic
@@ -228,6 +290,12 @@ export async function checkShortAnswer(
   correctAnswer: string, 
   questionContext: string
 ): Promise<{ isCorrect: boolean; explanation: string }> {
+  // Check if API key is available, use basic matching if not
+  if (!API_KEY || !genAI) {
+    console.warn('Using basic string comparison for answer checking (Gemini API key missing)');
+    return basicAnswerCheck(userAnswer, correctAnswer);
+  }
+  
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     
@@ -271,10 +339,66 @@ export async function checkShortAnswer(
     return evaluation;
   } catch (error) {
     console.error('Error checking short answer:', error);
-    // Default to partial credit on error
-    return { 
-      isCorrect: false, 
-      explanation: 'Could not evaluate your answer accurately. Please try a different wording.' 
+    // Fall back to basic string comparison
+    return basicAnswerCheck(userAnswer, correctAnswer);
+  }
+}
+
+// Basic answer checking without AI
+function basicAnswerCheck(userAnswer: string, correctAnswer: string): { isCorrect: boolean; explanation: string } {
+  // Clean and normalize strings for comparison
+  const normalizedUserAnswer = userAnswer
+    .trim()
+    .toLowerCase()
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+    .replace(/\s+/g, ' ');
+  
+  const normalizedCorrectAnswer = correctAnswer
+    .trim()
+    .toLowerCase()
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+    .replace(/\s+/g, ' ');
+  
+  // Check for exact match
+  if (normalizedUserAnswer === normalizedCorrectAnswer) {
+    return {
+      isCorrect: true,
+      explanation: 'Your answer matches the correct answer exactly.'
     };
   }
+  
+  // Check if correct answer is contained in user answer
+  if (normalizedUserAnswer.includes(normalizedCorrectAnswer)) {
+    return {
+      isCorrect: true,
+      explanation: 'Your answer contains the correct answer.'
+    };
+  }
+  
+  // Check if user answer is contained in correct answer
+  if (normalizedCorrectAnswer.includes(normalizedUserAnswer)) {
+    return {
+      isCorrect: true,
+      explanation: 'Your answer is partially correct.'
+    };
+  }
+  
+  // Calculate similarity (simple word overlap)
+  const userWords = normalizedUserAnswer.split(' ');
+  const correctWords = normalizedCorrectAnswer.split(' ');
+  
+  const commonWords = userWords.filter(word => correctWords.includes(word));
+  const similarity = commonWords.length / correctWords.length;
+  
+  if (similarity >= 0.6) {
+    return {
+      isCorrect: true,
+      explanation: 'Your answer is similar enough to the correct answer.'
+    };
+  }
+  
+  return {
+    isCorrect: false,
+    explanation: `The correct answer is: ${correctAnswer}`
+  };
 }

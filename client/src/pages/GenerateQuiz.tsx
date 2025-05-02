@@ -93,15 +93,24 @@ const GenerateQuiz = () => {
         body: JSON.stringify(data),
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to generate quiz');
-      }
-      
       const responseData = await response.json();
       
-      if (responseData.quiz) {
+      if (!response.ok) {
+        throw new Error(responseData.message || responseData.error || 'Failed to generate quiz');
+      }
+      
+      if (responseData.questions && Array.isArray(responseData.questions)) {
+        // Create a quiz object with the generated questions
+        const generatedQuiz = {
+          title: `${data.topic} Quiz`,
+          topic: data.topic,
+          quizType: data.quizType,
+          questions: responseData.questions,
+          timeLimit: 10 // Default time limit of 10 minutes
+        };
+        
         // Store the generated quiz in local storage
-        localStorage.setItem('generatedQuiz', JSON.stringify(responseData.quiz));
+        localStorage.setItem('currentQuiz', JSON.stringify(generatedQuiz));
         
         toast({
           title: "Quiz generated!",
@@ -111,13 +120,14 @@ const GenerateQuiz = () => {
         // Navigate to the quiz page
         navigate("/quiz");
       } else {
-        throw new Error("Failed to generate quiz");
+        console.error("Invalid response format:", responseData);
+        throw new Error("Quiz generation failed - invalid response format");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating quiz:", error);
       toast({
         title: "Generation failed",
-        description: "There was a problem generating your quiz. Please try again.",
+        description: error.message || "There was a problem generating your quiz. Please try again.",
         variant: "destructive",
       });
     } finally {
