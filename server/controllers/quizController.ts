@@ -9,22 +9,42 @@ export const quizController = {
    */
   generateQuiz: async (req: Request, res: Response) => {
     try {
+      console.log('Quiz generation request received:', { 
+        body: req.body,
+        headers: {
+          authorization: req.headers.authorization ? 'Bearer [present]' : '[missing]',
+          'content-type': req.headers['content-type']
+        }
+      });
+      
       // Authenticate user
       const authHeader = req.headers.authorization;
       let userId = null;
       
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const idToken = authHeader.split('Bearer ')[1];
-        const decodedToken = await verifyIdToken(idToken).catch(() => null);
-        userId = decodedToken?.uid;
+        console.log('Auth verification called with token length:', idToken.length);
+        
+        try {
+          const decodedToken = await verifyIdToken(idToken);
+          userId = decodedToken?.uid;
+          console.log('Extracted user ID from token:', userId);
+        } catch (authError) {
+          console.error('Token verification error:', authError);
+        }
+      } else {
+        console.log('No authentication token provided');
       }
       
       // Get quiz parameters from request
       const { topic, quizType, numQuestions } = req.body;
       
       if (!topic) {
+        console.log('Bad request: Topic is missing');
         return res.status(400).json({ message: 'Topic is required' });
       }
+      
+      console.log('Generating quiz with params:', { topic, quizType, numQuestions, userId });
       
       // Generate quiz with Gemini API
       const questions = await generateQuiz({
@@ -32,6 +52,8 @@ export const quizController = {
         quizType: quizType || 'auto',
         numQuestions: numQuestions || 10,
       });
+      
+      console.log(`Quiz generated successfully with ${questions.length} questions`);
       
       // Save the quiz to Firestore if user is authenticated
       let quizId = null;
@@ -50,12 +72,16 @@ export const quizController = {
             isPublic: true,
           };
           
+          console.log('Saving quiz to Firestore');
           const savedQuiz = await createQuizDocument(quizData);
           quizId = savedQuiz.id;
+          console.log('Quiz saved to Firestore with ID:', quizId);
         } catch (firestoreError) {
           console.warn('Failed to save quiz to Firestore but continuing:', firestoreError);
           // Continue with the quiz but don't save to Firestore
         }
+      } else {
+        console.log('Skipping Firestore save as user is not authenticated');
       }
       
       return res.status(200).json({

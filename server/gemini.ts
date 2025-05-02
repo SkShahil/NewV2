@@ -55,32 +55,45 @@ export interface Question {
 
 // Generate a quiz based on topic and type
 export async function generateQuiz(params: QuizParams): Promise<Question[]> {
+  console.log('generateQuiz called with params:', params);
+  console.log('API_KEY exists:', !!API_KEY);
+  
   // Check if API key is available, provide mock data if not
   if (!API_KEY) {
     console.warn('Using fallback quiz data since Gemini API key is missing');
-    return getSampleQuiz(params.topic, params.quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+    const sampleQuiz = getSampleQuiz(params.topic, params.quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+    console.log(`Returning sample quiz with ${sampleQuiz.length} questions`);
+    return sampleQuiz;
   }
   
   try {
     // Check if we have a valid genAI instance
     if (!genAI) {
       console.warn('Gemini AI client not available - using sample data');
-      return getSampleQuiz(params.topic, params.quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+      const sampleQuiz = getSampleQuiz(params.topic, params.quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+      console.log(`Returning sample quiz due to missing genAI with ${sampleQuiz.length} questions`);
+      return sampleQuiz;
     }
     
+    console.log('Initializing Gemini model: gemini-1.5-flash');
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     
     // Determine the appropriate quiz type if 'auto' is selected
     let quizType = params.quizType;
     
     if (quizType === 'auto') {
+      console.log('Auto quiz type selected, determining best type for topic');
       quizType = await determineQuizType(params.topic);
+      console.log('Quiz type determined:', quizType);
     }
     
     // Build the prompt based on the quiz type
-    const prompt = buildQuizPrompt(params.topic, quizType as 'multiple-choice' | 'true-false' | 'short-answer', params.numQuestions || 10);
+    const numQuestions = params.numQuestions || 10;
+    console.log(`Building prompt for ${quizType} quiz with ${numQuestions} questions`);
+    const prompt = buildQuizPrompt(params.topic, quizType as 'multiple-choice' | 'true-false' | 'short-answer', numQuestions);
     
     // Generate content with the model
+    console.log('Sending request to Gemini API');
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       safetySettings,
@@ -92,16 +105,23 @@ export async function generateQuiz(params: QuizParams): Promise<Question[]> {
       },
     });
     
+    console.log('Received response from Gemini API');
     const response = result.response;
     const text = response.text();
+    console.log('Response text length:', text.length);
     
     // Parse the response to extract questions
-    return parseQuizResponse(text, quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+    console.log('Parsing response to extract questions');
+    const questions = parseQuizResponse(text, quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+    console.log(`Successfully parsed ${questions.length} questions`);
+    return questions;
   } catch (error) {
     console.error('Error generating quiz with Gemini:', error);
     console.warn('Falling back to sample quiz data');
     // Provide sample data on error
-    return getSampleQuiz(params.topic, params.quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+    const sampleQuiz = getSampleQuiz(params.topic, params.quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+    console.log(`Returning sample quiz due to error with ${sampleQuiz.length} questions`);
+    return sampleQuiz;
   }
 }
 
