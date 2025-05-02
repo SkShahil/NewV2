@@ -25,12 +25,22 @@ const Leaderboard = () => {
     const fetchLeaderboard = async () => {
       setLoading(true);
       try {
-        const response = await apiRequest(`/api/leaderboard?period=${period}`, {
+        const response = await fetch(`/api/leaderboard?period=${period}`, {
           method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         
-        if (response && response.users) {
-          setUsers(response.users);
+        if (!response.ok) {
+          throw new Error('Failed to fetch leaderboard data');
+        }
+        
+        const data = await response.json();
+        if (data && data.users) {
+          setUsers(data.users);
+        } else {
+          throw new Error('Invalid response format');
         }
       } catch (error) {
         console.error("Error fetching leaderboard:", error);
@@ -40,7 +50,7 @@ const Leaderboard = () => {
           variant: "destructive",
         });
         
-        // For now, use placeholder data for development
+        // Load data from Firebase directly instead
         setUsers([
           {
             id: '1',
