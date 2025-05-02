@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import SimpleNav from "@/components/SimpleNav";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/context/ProtectedRoute";
+import { QuizProvider } from "@/context/QuizContext";
 
 // Import pages
 import AboutPage from "@/pages/AboutPage";
@@ -20,6 +21,7 @@ import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
 import GenerateQuiz from "@/pages/GenerateQuiz";
 import QuizPage from "@/pages/QuizPage";
+import Results from "@/pages/Results";
 import Leaderboard from "@/pages/Leaderboard";
 import ChallengeCreate from "@/pages/ChallengeCreate";
 import Profile from "@/pages/Profile";
@@ -67,25 +69,41 @@ function App() {
         
         <Route path="/generate-quiz">
           <ProtectedRoute>
-            <GenerateQuiz />
+            <QuizProvider>
+              <GenerateQuiz />
+            </QuizProvider>
           </ProtectedRoute>
         </Route>
         
         <Route path="/quiz/generate">
           <ProtectedRoute>
-            <GenerateQuiz />
+            <QuizProvider>
+              <GenerateQuiz />
+            </QuizProvider>
           </ProtectedRoute>
         </Route>
         
         <Route path="/quiz">
           <ProtectedRoute>
-            <QuizPage />
+            <QuizProvider>
+              <QuizPage />
+            </QuizProvider>
           </ProtectedRoute>
         </Route>
         
         <Route path="/quiz/:id">
           <ProtectedRoute>
-            <QuizPage />
+            <QuizProvider>
+              <QuizPage />
+            </QuizProvider>
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/results/:attemptId">
+          <ProtectedRoute>
+            <QuizProvider>
+              <Results />
+            </QuizProvider>
           </ProtectedRoute>
         </Route>
         
