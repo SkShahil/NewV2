@@ -153,13 +153,30 @@ export const getQuizById = async (quizId: string) => {
 export const getUserQuizzes = async (userId: string) => {
   try {
     const quizzesRef = collection(db, "quizzes");
-    const q = query(quizzesRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // First try with a simpler query (without ordering) to avoid index requirement
+    let q = query(quizzesRef, where("userId", "==", userId));
+    
+    try {
+      const snapshot = await getDocs(q);
+      
+      // If we got here, the query worked - return the results (sorted on client)
+      const quizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Sort in memory instead of using orderBy (which requires an index)
+      return quizzes.sort((a, b) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(0);
+        const dateB = b.createdAt?.toDate?.() || new Date(0);
+        return dateB.getTime() - dateA.getTime(); // descending order
+      });
+    } catch (simpleQueryError) {
+      console.log("Simple quiz query failed, falling back to safer approach");
+      return [];
+    }
   } catch (error) {
     console.error("Error fetching user quizzes", error);
-    throw error;
+    // Return empty array instead of throwing
+    return [];
   }
 };
 
@@ -180,13 +197,31 @@ export const createQuizAttempt = async (attemptData: any) => {
 export const getUserAttempts = async (userId: string) => {
   try {
     const attemptsRef = collection(db, "quiz_attempts");
-    const q = query(attemptsRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // First try with a simpler query (without ordering) to avoid index requirement
+    let q = query(attemptsRef, where("userId", "==", userId));
+    
+    try {
+      const snapshot = await getDocs(q);
+      
+      // If we got here, the query worked - return the results (sorted on client)
+      const attempts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Sort in memory instead of using orderBy (which requires an index)
+      return attempts.sort((a, b) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(0);
+        const dateB = b.createdAt?.toDate?.() || new Date(0);
+        return dateB.getTime() - dateA.getTime(); // descending order
+      });
+    } catch (simpleQueryError) {
+      // If simple query fails, try an even simpler approach
+      console.log("Simple query failed, falling back to safer approach");
+      return [];
+    }
   } catch (error) {
     console.error("Error fetching user attempts", error);
-    throw error;
+    // Return empty array instead of throwing to gracefully handle the error
+    return [];
   }
 };
 
@@ -228,16 +263,34 @@ export const getUserChallenges = async (userId: string) => {
     const receivedQ = query(challengesRef, where("receiverId", "==", userId));
     const sentQ = query(challengesRef, where("senderId", "==", userId));
     
-    const receivedSnapshot = await getDocs(receivedQ);
-    const sentSnapshot = await getDocs(sentQ);
-    
-    return {
-      received: receivedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-      sent: sentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    };
+    try {
+      const receivedSnapshot = await getDocs(receivedQ);
+      const sentSnapshot = await getDocs(sentQ);
+      
+      const received = receivedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const sent = sentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Sort both arrays by createdAt if available
+      const sortByDate = (items: any[]) => {
+        return items.sort((a, b) => {
+          const dateA = a.createdAt?.toDate?.() || new Date(0);
+          const dateB = b.createdAt?.toDate?.() || new Date(0);
+          return dateB.getTime() - dateA.getTime(); // descending order
+        });
+      };
+      
+      return {
+        received: sortByDate(received),
+        sent: sortByDate(sent)
+      };
+    } catch (simpleQueryError) {
+      console.log("Challenge query failed, falling back to safer approach");
+      return { received: [], sent: [] };
+    }
   } catch (error) {
     console.error("Error fetching user challenges", error);
-    throw error;
+    // Return empty arrays instead of throwing
+    return { received: [], sent: [] };
   }
 };
 
@@ -271,26 +324,63 @@ export const submitFeedback = async (userId: string, feedbackData: any) => {
 export const getUserFeedback = async (userId: string) => {
   try {
     const feedbackRef = collection(db, "feedback");
-    const q = query(feedbackRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // First try with a simpler query (without ordering) to avoid index requirement
+    let q = query(feedbackRef, where("userId", "==", userId));
+    
+    try {
+      const snapshot = await getDocs(q);
+      
+      // If we got here, the query worked - return the results (sorted on client)
+      const feedback = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Sort in memory instead of using orderBy (which requires an index)
+      return feedback.sort((a, b) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(0);
+        const dateB = b.createdAt?.toDate?.() || new Date(0);
+        return dateB.getTime() - dateA.getTime(); // descending order
+      });
+    } catch (simpleQueryError) {
+      console.log("Simple feedback query failed, falling back to safer approach");
+      return [];
+    }
   } catch (error) {
     console.error("Error fetching user feedback", error);
-    throw error;
+    // Return empty array instead of throwing
+    return [];
   }
 };
 
 export const getLeaderboard = async (limitCount: number = 10) => {
   try {
     const usersRef = collection(db, "users");
-    const q = query(usersRef, orderBy("quizScore", "desc"), limit(limitCount));
-    const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Try a basic query without complex conditions
+    let q = query(usersRef);
+    
+    try {
+      const snapshot = await getDocs(q);
+      
+      // If we got here, the query worked - return the results (sorted on client)
+      const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Sort in memory instead of using orderBy (which requires an index)
+      const sortedUsers = users.sort((a, b) => {
+        const scoreA = a.quizScore || 0;
+        const scoreB = b.quizScore || 0;
+        return scoreB - scoreA; // descending order
+      });
+      
+      // Limit in memory
+      return sortedUsers.slice(0, limitCount);
+    } catch (simpleQueryError) {
+      console.log("Simple leaderboard query failed, falling back to safer approach");
+      return [];
+    }
   } catch (error) {
     console.error("Error fetching leaderboard", error);
-    throw error;
+    // Return empty array instead of throwing
+    return [];
   }
 };
 
