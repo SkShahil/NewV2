@@ -45,6 +45,9 @@ function App() {
         <Route path="/" component={HomePage} />
         <Route path="/about" component={AboutPage} />
         <Route path="/contact" component={ContactPage} />
+        <Route path="/login" component={() => import("@/pages/Login").then(mod => mod.default)} />
+        <Route path="/signup" component={() => import("@/pages/Signup").then(mod => mod.default)} />
+        <Route path="/dashboard" component={HomePage} />
         <Route component={NotFound} />
       </Switch>
       
@@ -156,11 +159,15 @@ function HomePage() {
                 MindMash combines the power of AI with interactive learning to create personalized quizzes that adapt to your knowledge level and learning style.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="sm:px-8">
-                  <BrainIcon className="mr-2 h-5 w-5" /> Try It Free
+                <Button size="lg" className="sm:px-8 gradient-primary" asChild>
+                  <Link href="/signup">
+                    <BrainIcon className="mr-2 h-5 w-5" /> Try It Free
+                  </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="sm:px-8">
-                  <ChevronRightIcon className="mr-2 h-5 w-5" /> Learn More
+                <Button size="lg" variant="outline" className="sm:px-8 gradient-secondary" asChild>
+                  <Link href="/login">
+                    <ChevronRightIcon className="mr-2 h-5 w-5" /> Get Started
+                  </Link>
                 </Button>
               </div>
             </div>
