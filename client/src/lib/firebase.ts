@@ -37,6 +37,13 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
 };
 
+// Debug Firebase config to ensure environment variables are loaded
+console.log("Firebase config initialized with:", {
+  apiKeyExists: !!import.meta.env.VITE_FIREBASE_API_KEY,
+  projectIdExists: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  appIdExists: !!import.meta.env.VITE_FIREBASE_APP_ID,
+});
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -274,10 +281,10 @@ export const getUserFeedback = async (userId: string) => {
   }
 };
 
-export const getLeaderboard = async (limit: number = 10) => {
+export const getLeaderboard = async (limitCount: number = 10) => {
   try {
     const usersRef = collection(db, "users");
-    const q = query(usersRef, orderBy("quizScore", "desc"), limit(limit));
+    const q = query(usersRef, orderBy("quizScore", "desc"), limit(limitCount));
     const snapshot = await getDocs(q);
     
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

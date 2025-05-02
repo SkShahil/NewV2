@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import QuickActionCard from "@/components/dashboard/QuickActionCard";
@@ -8,10 +7,37 @@ import ChallengeList from "@/components/dashboard/ChallengeList";
 import ProfileCard from "@/components/dashboard/ProfileCard";
 import StatsCard from "@/components/dashboard/StatsCard";
 import PopularTopicsCard from "@/components/dashboard/PopularTopicsCard";
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, getUserDocument } from '@/lib/firebase';
 
 const Dashboard = () => {
-  const { user, loading } = useAuth();
+  const [user, setUser] = useState<any>(null);
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [, navigate] = useLocation();
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      
+      if (currentUser) {
+        try {
+          const userDoc = await getUserDocument(currentUser.uid);
+          setUserData(userDoc);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+      
+      setLoading(false);
+      
+      if (!currentUser) {
+        navigate('/login');
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [navigate]);
 
   useEffect(() => {
     if (!loading && !user) {

@@ -1,14 +1,15 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/AuthContext";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { getInitials } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { getUserAttempts, getUserChallenges } from "@/lib/firebase";
+import { getUserAttempts, getUserChallenges, getUserDocument, auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 const ProfileCard = () => {
-  const { user, userData } = useAuth();
+  const [user, setUser] = useState<any>(null);
+  const [userData, setUserData] = useState<any>(null);
   const [stats, setStats] = useState({
     quizzes: 0,
     avgScore: 0,
