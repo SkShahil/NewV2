@@ -28,14 +28,26 @@ type FormValues = z.infer<typeof formSchema>;
 const GenerateQuiz = () => {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   
   // Listen to auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      
+      // Get the authentication token if the user is logged in
+      if (currentUser) {
+        try {
+          const token = await currentUser.getIdToken();
+          setAuthToken(token);
+        } catch (error) {
+          console.error("Error getting auth token:", error);
+        }
+      }
+      
       setAuthLoading(false);
     });
     
@@ -61,11 +73,22 @@ const GenerateQuiz = () => {
   const onSubmit = async (data: FormValues) => {
     setIsGenerating(true);
     
+    if (!authToken) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to generate quizzes.",
+        variant: "destructive",
+      });
+      setIsGenerating(false);
+      return;
+    }
+    
     try {
       const response = await fetch('/api/quiz/generate', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify(data),
       });
