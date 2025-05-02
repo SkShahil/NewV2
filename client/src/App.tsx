@@ -13,6 +13,8 @@ import SimpleNav from "@/components/SimpleNav";
 // Import pages
 import AboutPage from "@/pages/AboutPage";
 import ContactPage from "@/pages/ContactPage";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
 
 function App() {
   const [location] = useLocation();
@@ -45,8 +47,8 @@ function App() {
         <Route path="/" component={HomePage} />
         <Route path="/about" component={AboutPage} />
         <Route path="/contact" component={ContactPage} />
-        <Route path="/login" component={() => import("@/pages/Login").then(mod => mod.default)} />
-        <Route path="/signup" component={() => import("@/pages/Signup").then(mod => mod.default)} />
+        <Route path="/login" component={Login} />
+        <Route path="/signup" component={Signup} />
         <Route path="/dashboard" component={HomePage} />
         <Route component={NotFound} />
       </Switch>

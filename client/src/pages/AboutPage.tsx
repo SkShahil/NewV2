@@ -126,22 +126,37 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Team Members - Placeholder */}
+      {/* Meet Our Team - With only 2 key members */}
       <div className="mb-20">
-        <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Our Team</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-          {[1, 2, 3, 4].map((_, i) => (
-            <div key={i} className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-              <div className="bg-gray-200 h-48"></div>
-              <div className="p-4">
-                <h3 className="text-lg font-bold text-gray-900">Team Member</h3>
-                <p className="text-gray-600 text-sm mb-2">Position</p>
-                <p className="text-gray-500 text-sm">
-                  Brief description about the team member and their role at MindMash.
-                </p>
+        <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Meet Our Team</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto gap-8">
+          <div className="bg-white gradient-card rounded-lg shadow-md overflow-hidden">
+            <div className="h-4 gradient-primary"></div>
+            <div className="p-6">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BrainIcon className="h-10 w-10 text-primary" />
               </div>
+              <h3 className="text-xl font-bold text-gray-900 text-center">Dr. Rajesh Kumar</h3>
+              <p className="text-primary font-medium text-sm mb-3 text-center">Founder & CEO</p>
+              <p className="text-gray-600 text-center">
+                With over 15 years of experience in education technology, Rajesh leads our mission to make learning accessible and engaging for everyone.
+              </p>
             </div>
-          ))}
+          </div>
+          
+          <div className="bg-white gradient-card rounded-lg shadow-md overflow-hidden">
+            <div className="h-4 gradient-secondary"></div>
+            <div className="p-6">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <GraduationCapIcon className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 text-center">Priya Sharma</h3>
+              <p className="text-primary font-medium text-sm mb-3 text-center">CTO & AI Lead</p>
+              <p className="text-gray-600 text-center">
+                An AI researcher with a passion for education, Priya oversees our technology development and ensures our platform delivers personalized learning experiences.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
