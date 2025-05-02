@@ -14,6 +14,7 @@ import { BellIcon, LogOut, Settings, User } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Navigation = () => {
   const { user, logout } = useAuth();
@@ -83,7 +84,9 @@ const Navigation = () => {
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            <Button variant="ghost" size="icon" className="relative p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-2" aria-label="Notifications">
+            <ThemeToggle />
+            
+            <Button variant="ghost" size="icon" className="relative p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mx-2" aria-label="Notifications">
               <BellIcon className="h-5 w-5" />
               <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-destructive"></span>
             </Button>
@@ -206,6 +209,10 @@ const Navigation = () => {
                     ))}
                   </div>
                   
+                  <div className="py-3 flex justify-center items-center">
+                    <ThemeToggle />
+                  </div>
+                
                   <div className="mt-auto pt-6 border-t border-gray-200">
                     {user ? (
                       <Button onClick={handleLogout} variant="outline" className="w-full">
