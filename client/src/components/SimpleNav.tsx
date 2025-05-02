@@ -1,10 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from "wouter";
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from '@/components/ui/button';
+import { auth, logoutUser } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogOut, User as UserIcon, Settings, Bookmark } from 'lucide-react';
+import { getInitials } from '@/lib/utils';
 
 const SimpleNav = () => {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Listen for authentication state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser as any);
+      setLoading(false);
+    });
+    
+    // Clean up subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   return (
     <nav className="bg-background dark:bg-gray-950 shadow-sm sticky top-0 z-50 border-b border-border">
@@ -77,17 +103,63 @@ const SimpleNav = () => {
             {/* Theme toggle */}
             <ThemeToggle />
             
-            {/* Auth buttons */}
+            {/* Auth buttons or user profile */}
             <div className="flex items-center gap-2">
-              <Button asChild variant="ghost">
-                <Link href="/profile">Profile</Link>
-              </Button>
-              <Button asChild variant="ghost">
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button asChild className="gradient-primary">
-                <Link href="/signup">Sign Up</Link>
-              </Button>
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+                        <AvatarFallback className="bg-gradient-to-br from-orange-400 via-white to-green-400">
+                          {user.displayName ? getInitials(user.displayName) : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" className="flex items-center cursor-pointer">
+                        <UserIcon className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" className="flex items-center cursor-pointer">
+                        <Bookmark className="mr-2 h-4 w-4" />
+                        <span>Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-red-600 cursor-pointer"
+                      onClick={async () => {
+                        await logoutUser();
+                        navigate('/');
+                      }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button asChild variant="ghost">
+                    <Link href="/login">Login</Link>
+                  </Button>
+                  <Button asChild className="gradient-primary">
+                    <Link href="/signup">Sign Up</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
