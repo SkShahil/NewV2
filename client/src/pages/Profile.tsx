@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { getAuth, updateProfile, signOut, onAuthStateChanged } from 'firebase/auth';
 import { db, getUserAttempts } from '@/lib/firebase';
 import { getInitials } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -33,17 +33,34 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const Profile = () => {
   const [, navigate] = useLocation();
-  const { user, loading: authLoading, logout, updateUserDisplayName } = useAuth();
+  const auth = getAuth();
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<{
+    totalQuizzes: number;
+    avgScore: number;
+    bestScore: number;
+    subjectsMastered: string[];
+  }>({
     totalQuizzes: 0,
     avgScore: 0,
     bestScore: 0,
     subjectsMastered: [],
   });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  
+  // Listen to auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, []);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -140,7 +157,11 @@ const Profile = () => {
       
       // Update display name in Auth
       if (data.displayName !== user.displayName) {
-        await updateUserDisplayName(data.displayName);
+        await updateProfile(auth.currentUser!, {
+          displayName: data.displayName
+        });
+        // Force reload user data
+        setUser({ ...auth.currentUser });
       }
       
       // Update user document in Firestore
@@ -171,7 +192,7 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut(auth);
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
