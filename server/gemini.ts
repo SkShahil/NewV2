@@ -1,0 +1,280 @@
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+
+// Initialize the Gemini API with API key from environment variables
+const API_KEY = process.env.GEMINI_FLASH_API_KEY || '';
+
+// Check if API key is provided
+if (!API_KEY) {
+  console.error('Missing GEMINI_FLASH_API_KEY environment variable');
+}
+
+const genAI = new GoogleGenerativeAI(API_KEY);
+
+// Safety settings for content generation
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+];
+
+// Interface for quiz parameters
+export interface QuizParams {
+  topic: string;
+  quizType: 'multiple-choice' | 'true-false' | 'short-answer' | 'auto';
+  numQuestions?: number;
+}
+
+// Interface for question structure
+export interface Question {
+  id: string;
+  question: string;
+  options?: string[];
+  correctAnswer: string | string[];
+  explanation?: string;
+}
+
+// Generate a quiz based on topic and type
+export async function generateQuiz(params: QuizParams): Promise<Question[]> {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    // Determine the appropriate quiz type if 'auto' is selected
+    let quizType = params.quizType;
+    
+    if (quizType === 'auto') {
+      quizType = await determineQuizType(params.topic);
+    }
+    
+    // Build the prompt based on the quiz type
+    const prompt = buildQuizPrompt(params.topic, quizType as 'multiple-choice' | 'true-false' | 'short-answer', params.numQuestions || 10);
+    
+    // Generate content with the model
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      safetySettings,
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.8,
+        topK: 40,
+        maxOutputTokens: 4096,
+      },
+    });
+    
+    const response = result.response;
+    const text = response.text();
+    
+    // Parse the response to extract questions
+    return parseQuizResponse(text, quizType as 'multiple-choice' | 'true-false' | 'short-answer');
+  } catch (error) {
+    console.error('Error generating quiz with Gemini:', error);
+    throw new Error('Failed to generate quiz. Please try again later.');
+  }
+}
+
+// Determine the best quiz type for a given topic
+async function determineQuizType(topic: string): Promise<'multiple-choice' | 'true-false' | 'short-answer'> {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    const prompt = `
+      You are a quiz generation assistant. Based on the topic "${topic}", 
+      determine the most appropriate quiz type from these options:
+      1. multiple-choice: Best for topics with distinct, concrete answers that can be presented as options.
+      2. true-false: Best for facts, statements, or common misconceptions that can be evaluated as true or false.
+      3. short-answer: Best for definitions, explanations, or topics requiring brief written responses.
+      
+      Analyze the topic and respond with ONLY ONE of these words: "multiple-choice", "true-false", or "short-answer".
+      Do not include any other text in your response.
+    `;
+    
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      safetySettings,
+      generationConfig: {
+        temperature: 0.2,
+        topP: 0.8,
+        maxOutputTokens: 10,
+      },
+    });
+    
+    const response = result.response.text().trim().toLowerCase();
+    
+    if (response.includes('multiple-choice')) {
+      return 'multiple-choice';
+    } else if (response.includes('true-false')) {
+      return 'true-false';
+    } else if (response.includes('short-answer')) {
+      return 'short-answer';
+    }
+    
+    // Default to multiple-choice if response is unclear
+    return 'multiple-choice';
+  } catch (error) {
+    console.error('Error determining quiz type:', error);
+    return 'multiple-choice'; // Default to multiple-choice on error
+  }
+}
+
+// Build a quiz generation prompt based on the selected quiz type
+function buildQuizPrompt(topic: string, quizType: 'multiple-choice' | 'true-false' | 'short-answer', numQuestions: number): string {
+  const basePrompt = `
+    You are a quiz generation assistant. Create a ${quizType} quiz about "${topic}" with exactly ${numQuestions} questions.
+    
+    Follow these specific format requirements:
+    1. Return ONLY a valid JSON array of questions.
+    2. Each question object must have these fields:
+       - "id": a unique string identifier (use UUIDs)
+       - "question": the question text
+       - "correctAnswer": the correct answer
+       - "explanation": a brief explanation of why the answer is correct
+  `;
+  
+  let specificInstructions = '';
+  
+  switch (quizType) {
+    case 'multiple-choice':
+      specificInstructions = `
+        3. Each question must also include an "options" field with an array of 4 choices.
+        4. The "correctAnswer" must be one of the options.
+        5. Options should be clear, concise, and distinct from each other.
+        6. Include plausible distractors that test understanding, not just memory.
+      `;
+      break;
+    case 'true-false':
+      specificInstructions = `
+        3. Each question must be a clear statement that can be evaluated as true or false.
+        4. The "correctAnswer" must be either "True" or "False".
+        5. Include a mix of true and false statements.
+        6. Statements should be unambiguous with a clear correct answer.
+      `;
+      break;
+    case 'short-answer':
+      specificInstructions = `
+        3. Questions should be concise and have specific, brief answers.
+        4. The "correctAnswer" should be a short string or phrase (1-5 words).
+        5. Questions should focus on definitions, specific facts, or key concepts.
+        6. Avoid questions with multiple possible correct answers.
+      `;
+      break;
+  }
+  
+  return `${basePrompt}${specificInstructions}
+    
+    Example of the expected JSON format:
+    [
+      {
+        "id": "unique-id-1",
+        "question": "Question text goes here?",
+        "options": ["Option A", "Option B", "Option C", "Option D"],
+        "correctAnswer": "Option B",
+        "explanation": "Brief explanation of the correct answer."
+      }
+    ]
+    
+    Return the JSON array with ${numQuestions} questions about ${topic}.
+  `;
+}
+
+// Parse the quiz response from Gemini into structured questions
+function parseQuizResponse(text: string, quizType: 'multiple-choice' | 'true-false' | 'short-answer'): Question[] {
+  try {
+    // Extract JSON from the response
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    
+    if (!jsonMatch) {
+      throw new Error('No valid JSON found in the response');
+    }
+    
+    const jsonText = jsonMatch[0];
+    const questions = JSON.parse(jsonText) as Question[];
+    
+    // Validate and clean up questions
+    return questions.map(q => {
+      const question: Question = {
+        id: q.id || `q-${Math.random().toString(36).substring(2, 11)}`,
+        question: q.question,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation || ''
+      };
+      
+      if (quizType === 'multiple-choice' && Array.isArray(q.options)) {
+        question.options = q.options;
+      }
+      
+      return question;
+    });
+  } catch (error) {
+    console.error('Error parsing quiz response:', error);
+    throw new Error('Failed to parse quiz response. Please try again.');
+  }
+}
+
+// Check if a short answer is correct
+export async function checkShortAnswer(
+  userAnswer: string, 
+  correctAnswer: string, 
+  questionContext: string
+): Promise<{ isCorrect: boolean; explanation: string }> {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    const prompt = `
+      You are a quiz grading assistant. Evaluate whether the user's answer is correct for the given question.
+      
+      Question: ${questionContext}
+      Correct answer: ${correctAnswer}
+      User's answer: ${userAnswer}
+      
+      First, determine if the user's answer is semantically correct, even if the wording is different.
+      Then, respond with ONLY a valid JSON object with two fields:
+      {
+        "isCorrect": true or false,
+        "explanation": "Brief explanation of why the answer is correct or incorrect"
+      }
+    `;
+    
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      safetySettings,
+      generationConfig: {
+        temperature: 0.2,
+        topP: 0.8,
+        maxOutputTokens: 256,
+      },
+    });
+    
+    const response = result.response.text();
+    
+    // Extract JSON from the response
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) {
+      throw new Error('No valid JSON found in the response');
+    }
+    
+    const jsonText = jsonMatch[0];
+    const evaluation = JSON.parse(jsonText) as { isCorrect: boolean; explanation: string };
+    
+    return evaluation;
+  } catch (error) {
+    console.error('Error checking short answer:', error);
+    // Default to partial credit on error
+    return { 
+      isCorrect: false, 
+      explanation: 'Could not evaluate your answer accurately. Please try a different wording.' 
+    };
+  }
+}
