@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Send, Mail, Clock } from "lucide-react";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { auth } from "@/lib/firebase";
 
 const formSchema = z.object({
   recipientEmail: z.string().email("Please enter a valid email address"),
@@ -37,8 +37,39 @@ const ChallengeCreate = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [challengeCreated, setChallengeCreated] = useState(false);
   const [challengeLink, setChallengeLink] = useState("");
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  
+  // Get the auth token when the component mounts
+  useEffect(() => {
+    const getToken = async () => {
+      try {
+        if (auth.currentUser) {
+          const token = await auth.currentUser.getIdToken();
+          setAuthToken(token);
+        }
+      } catch (error) {
+        console.error("Error getting auth token:", error);
+      }
+    };
+    
+    getToken();
+    
+    // Set up auth state listener
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const token = await user.getIdToken();
+        setAuthToken(token);
+      } else {
+        setAuthToken(null);
+        // Redirect to login if not authenticated
+        navigate("/login");
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [navigate]);
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -69,12 +100,23 @@ const ChallengeCreate = () => {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     
+    if (!authToken) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a challenge.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
     try {
       // API call to create challenge
       const response = await fetch("/api/challenge/create", {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify(data)
       });

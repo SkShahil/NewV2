@@ -44,6 +44,9 @@ console.log("Firebase config initialized with:", {
   appIdExists: !!import.meta.env.VITE_FIREBASE_APP_ID,
 });
 
+// Log the current domain to add to Firebase authorized domains
+console.log("Current domain for Firebase Auth:", window.location.hostname);
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
