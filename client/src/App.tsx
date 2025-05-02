@@ -21,6 +21,7 @@ import Dashboard from "@/pages/Dashboard";
 import GenerateQuiz from "@/pages/GenerateQuiz";
 import Leaderboard from "@/pages/Leaderboard";
 import ChallengeCreate from "@/pages/ChallengeCreate";
+import Profile from "@/pages/Profile";
 
 function App() {
   const [location] = useLocation();
@@ -84,6 +85,12 @@ function App() {
         <Route path="/challenge/create">
           <ProtectedRoute>
             <ChallengeCreate />
+          </ProtectedRoute>
+        </Route>
+        
+        <Route path="/profile">
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         </Route>
         
