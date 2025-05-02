@@ -83,24 +83,37 @@ export const challengeController = {
       // Get the challenge from Firestore
       const challenge = await getChallengeByToken(token);
       
+      if (!challenge) {
+        return res.status(404).json({ message: 'Challenge not found' });
+      }
+      
+      // Cast to any to handle dynamic properties
+      const typedChallenge = challenge as any;
+      
       // Get quiz details
-      const quizData = await getQuizDocument(challenge.quizId as string);
+      const quizData = await getQuizDocument(typedChallenge.quizId);
+      
+      if (!quizData) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+      
+      // Cast quiz data to any to handle dynamic properties
+      const typedQuizData = quizData as any;
       
       // Check if challenge is expired
       const now = new Date();
-      const challengeData = challenge as any; // Type assertion to avoid TypeScript errors
-      const expiresAt = challengeData.expiresAt?.toDate ? 
-        new Date(challengeData.expiresAt.toDate()) : challengeData.expiresAt;
+      const expiresAt = typedChallenge.expiresAt?.toDate ? 
+        new Date(typedChallenge.expiresAt.toDate()) : typedChallenge.expiresAt;
       const isExpired = expiresAt && now > expiresAt;
       
       return res.status(200).json({
         ...challenge,
         quiz: {
-          id: quizData.id,
-          title: quizData.title,
-          topic: quizData.topic,
-          quizType: quizData.quizType,
-          questionCount: quizData.questions?.length || 0,
+          id: typedQuizData.id,
+          title: typedQuizData.title,
+          topic: typedQuizData.topic,
+          quizType: typedQuizData.quizType,
+          questionCount: typedQuizData.questions?.length || 0,
         },
         isExpired,
       });
