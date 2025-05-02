@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
-import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, Share2, Download, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface QuestionResult {
   questionId: string;
@@ -36,10 +36,25 @@ interface ResultsData {
 const Results = () => {
   const { attemptId } = useParams();
   const [, navigate] = useLocation();
-  const { user, loading: authLoading } = useAuth();
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<ResultsData | null>(null);
+
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+      
+      if (!currentUser) {
+        navigate('/login');
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [navigate]);
 
   useEffect(() => {
     if (!authLoading && !user) {
