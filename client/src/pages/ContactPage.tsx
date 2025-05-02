@@ -211,9 +211,55 @@ export default function ContactPage() {
         </div>
       </div>
       
-      {/* Map Placeholder */}
-      <div className="mb-16 rounded-lg overflow-hidden h-[400px] bg-gray-200 flex items-center justify-center border border-gray-300">
-        <p className="text-gray-600 text-lg">Interactive Map Would Be Displayed Here</p>
+      {/* Connect With Us Section */}
+      <div className="mb-16">
+        <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Connect With Us</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="bg-white gradient-card p-6 rounded-lg shadow-sm text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Email Support</h3>
+            <p className="text-gray-600 mb-4">
+              Our support team is available via email to answer your questions promptly.
+            </p>
+            <a href="mailto:support@mindmash.com" className="text-primary font-medium hover:underline">
+              support@mindmash.com
+            </a>
+          </div>
+          
+          <div className="bg-white gradient-card p-6 rounded-lg shadow-sm text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Live Chat</h3>
+            <p className="text-gray-600 mb-4">
+              Need immediate assistance? Chat with our customer service representatives.
+            </p>
+            <Button variant="outline" className="text-primary border-primary hover:bg-primary/10">
+              Start Chat
+            </Button>
+          </div>
+          
+          <div className="bg-white gradient-card p-6 rounded-lg shadow-sm text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Help Center</h3>
+            <p className="text-gray-600 mb-4">
+              Browse our comprehensive knowledge base for tutorials and guides.
+            </p>
+            <Button variant="outline" className="text-primary border-primary hover:bg-primary/10">
+              Visit Help Center
+            </Button>
+          </div>
+        </div>
       </div>
       
       {/* Newsletter Signup */}
