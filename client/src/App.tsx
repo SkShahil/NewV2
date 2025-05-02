@@ -232,9 +232,9 @@ function HomePage() {
               <p className="text-gray-600 mb-4">
                 Create customized quizzes on any topic with our advanced Gemini AI integration. Get intelligent questions tailored to your learning needs.
               </p>
-              <a href="#" className="text-primary font-medium flex items-center group">
+              <Link href="/generate-quiz" className="text-primary font-medium flex items-center group">
                 Learn more <ChevronRightIcon className="ml-1 h-4 w-4 group-hover:ml-2 transition-all" />
-              </a>
+              </Link>
             </div>
             
             <div className="p-6 bg-white rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
