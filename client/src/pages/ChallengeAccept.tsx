@@ -1,22 +1,23 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
-import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getChallengeByToken, getQuizById, updateChallengeStatus } from "@/lib/firebase";
+import { getChallengeByToken, getQuizById, updateChallengeStatus, auth } from "@/lib/firebase";
 import { useQuiz } from "@/context/QuizContext";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
+import { onAuthStateChanged } from "firebase/auth";
 
 const ChallengeAccept = () => {
   const { token } = useParams();
   const [, navigate] = useLocation();
-  const { user, loading: authLoading } = useAuth();
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const { loadQuiz } = useQuiz();
   const { toast } = useToast();
   
@@ -24,6 +25,16 @@ const ChallengeAccept = () => {
   const [challenge, setChallenge] = useState<any>(null);
   const [quiz, setQuiz] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchChallenge = async () => {
