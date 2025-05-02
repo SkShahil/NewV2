@@ -36,21 +36,26 @@ export const quizController = {
       // Save the quiz to Firestore if user is authenticated
       let quizId = null;
       if (userId) {
-        const quizData = {
-          userId,
-          title: `${topic} Quiz`,
-          topic,
-          quizType: quizType !== 'auto' ? quizType : (
-            questions[0].options ? 'multiple-choice' : 
-            typeof questions[0].correctAnswer === 'boolean' ? 'true-false' : 
-            'short-answer'
-          ),
-          questions,
-          isPublic: true,
-        };
-        
-        const savedQuiz = await createQuizDocument(quizData);
-        quizId = savedQuiz.id;
+        try {
+          const quizData = {
+            userId,
+            title: `${topic} Quiz`,
+            topic,
+            quizType: quizType !== 'auto' ? quizType : (
+              questions[0].options ? 'multiple-choice' : 
+              typeof questions[0].correctAnswer === 'boolean' ? 'true-false' : 
+              'short-answer'
+            ),
+            questions,
+            isPublic: true,
+          };
+          
+          const savedQuiz = await createQuizDocument(quizData);
+          quizId = savedQuiz.id;
+        } catch (firestoreError) {
+          console.warn('Failed to save quiz to Firestore but continuing:', firestoreError);
+          // Continue with the quiz but don't save to Firestore
+        }
       }
       
       return res.status(200).json({
@@ -78,17 +83,25 @@ export const quizController = {
         return res.status(400).json({ message: 'Quiz ID is required' });
       }
       
-      // Get the quiz from Firestore
-      const quiz = await getQuizDocument(id);
-      
-      return res.status(200).json(quiz);
+      try {
+        // Get the quiz from Firestore
+        const quiz = await getQuizDocument(id);
+        return res.status(200).json(quiz);
+      } catch (firestoreError: any) {
+        console.error('Firestore error:', firestoreError);
+        
+        if (firestoreError.message === 'Quiz not found') {
+          return res.status(404).json({ message: 'Quiz not found' });
+        }
+        
+        // Return a placeholder quiz with an error message if Firestore is not available
+        return res.status(500).json({
+          message: 'Failed to retrieve quiz from database',
+          error: firestoreError.message,
+        });
+      }
     } catch (error: any) {
       console.error('Get quiz error:', error);
-      
-      if (error.message === 'Quiz not found') {
-        return res.status(404).json({ message: 'Quiz not found' });
-      }
-      
       return res.status(500).json({
         message: 'Failed to retrieve quiz',
         error: error.message,
@@ -165,11 +178,18 @@ export const quizController = {
         timeTaken: timeTaken || null,
       };
       
-      const attempt = await createQuizAttempt(attemptData);
+      let attemptId = null;
+      try {
+        const attempt = await createQuizAttempt(attemptData);
+        attemptId = attempt.id;
+      } catch (firestoreError) {
+        console.warn('Failed to save quiz attempt to Firestore but continuing:', firestoreError);
+        // Continue without saving to Firestore
+      }
       
       return res.status(200).json({
         message: 'Quiz submitted successfully',
-        attemptId: attempt.id,
+        attemptId,
         score,
         correctAnswers,
       });

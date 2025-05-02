@@ -6,31 +6,31 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 // For Firebase Admin SDK, we'll use a more flexible approach to handle credentials
 let app;
 
-// Simplified initialization that's more reliable
+// Simplified initialization that's most reliable
 try {
-  // First, try to initialize with the project ID only
+  // Just initialize with the project ID - more reliable than using service accounts
   app = initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID
+    projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'mindmash-demo'
   });
-  console.log('Firebase Admin SDK initialized successfully');
+  console.log('Firebase Admin SDK initialized with project ID only');
 } catch (error) {
   console.error('Error initializing Firebase Admin SDK:', error);
+  console.warn('Firebase Admin SDK initialization failed - database operations may fail');
   
+  // Create a fallback app to prevent fatal errors
   try {
-    // As a backup, initialize with a default project ID
     app = initializeApp({
       projectId: 'mindmash-demo'
-    }, 'mindmash-app');
-    console.log('Firebase Admin SDK initialized with fallback configuration');
+    }, 'backup-app');
+    console.log('Created fallback Firebase app');
   } catch (fallbackError) {
-    console.error('Fatal error initializing Firebase:', fallbackError);
-    throw new Error('Could not initialize Firebase after multiple attempts.');
+    console.error('Even fallback app initialization failed:', fallbackError);
   }
 }
 
 // Export Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
 export const serverTimestamp = FieldValue.serverTimestamp;
 
 /**
