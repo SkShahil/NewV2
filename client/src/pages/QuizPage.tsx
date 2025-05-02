@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useParams } from 'wouter';
-import { useAuth } from '@/context/AuthContext';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -12,7 +12,10 @@ import { Question } from '@/lib/gemini';
 const QuizPage = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
-  const { user, loading: authLoading } = useAuth();
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const auth = getAuth();
+  
   const {
     currentQuiz,
     loadQuiz,
@@ -31,6 +34,16 @@ const QuizPage = () => {
   const [loading, setLoading] = useState(true);
   const [textToSpeech, setTextToSpeech] = useState(true);
   const { toast } = useToast();
+  
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setAuthLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, [auth]);
   
   useEffect(() => {
     if (!authLoading && !user) {
