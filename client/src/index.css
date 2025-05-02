@@ -64,6 +64,53 @@
   body {
     @apply font-sans antialiased bg-secondary text-foreground;
   }
+  
+  /* Apply linear gradient backgrounds to specific elements */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white;
+  }
+  
+  .gradient-secondary {
+    @apply bg-gradient-to-r from-teal-400 to-blue-500 hover:from-teal-500 hover:to-blue-600 text-white;
+  }
+  
+  .gradient-accent {
+    @apply bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 text-white;
+  }
+  
+  .gradient-success {
+    @apply bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white;
+  }
+  
+  .gradient-info {
+    @apply bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white;
+  }
+  
+  .gradient-warning {
+    @apply bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white;
+  }
+  
+  .gradient-card {
+    @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-md;
+  }
+  
+  /* Main app background gradients for light/dark themes */
+  .main-bg-light {
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  }
+  
+  .main-bg-dark {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  }
+  
+  /* Apply appropriate main background based on theme */
+  body.light {
+    @apply main-bg-light;
+  }
+  
+  body.dark {
+    @apply main-bg-dark;
+  }
 }
 
 /* Custom Styles */
