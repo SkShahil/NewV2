@@ -58,43 +58,33 @@ function App() {
         
         {/* Protected Routes */}
         <Route path="/dashboard">
-          <AuthProvider>
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          </AuthProvider>
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
         </Route>
         
         <Route path="/generate-quiz">
-          <AuthProvider>
-            <ProtectedRoute>
-              <GenerateQuiz />
-            </ProtectedRoute>
-          </AuthProvider>
+          <ProtectedRoute>
+            <GenerateQuiz />
+          </ProtectedRoute>
         </Route>
         
         <Route path="/quiz/generate">
-          <AuthProvider>
-            <ProtectedRoute>
-              <GenerateQuiz />
-            </ProtectedRoute>
-          </AuthProvider>
+          <ProtectedRoute>
+            <GenerateQuiz />
+          </ProtectedRoute>
         </Route>
         
         <Route path="/leaderboard">
-          <AuthProvider>
-            <ProtectedRoute>
-              <Leaderboard />
-            </ProtectedRoute>
-          </AuthProvider>
+          <ProtectedRoute>
+            <Leaderboard />
+          </ProtectedRoute>
         </Route>
         
         <Route path="/challenge/create">
-          <AuthProvider>
-            <ProtectedRoute>
-              <ChallengeCreate />
-            </ProtectedRoute>
-          </AuthProvider>
+          <ProtectedRoute>
+            <ChallengeCreate />
+          </ProtectedRoute>
         </Route>
         
         <Route component={NotFound} />
