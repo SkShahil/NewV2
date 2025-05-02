@@ -14,7 +14,7 @@ import { getInitials } from "@/lib/utils";
 import { onAuthStateChanged } from "firebase/auth";
 
 const ChallengeAccept = () => {
-  const { token } = useParams();
+  const { token } = useParams<{ token: string }>();
   const [, navigate] = useLocation();
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
