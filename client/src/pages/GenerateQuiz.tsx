@@ -1,175 +1,214 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import QuizForm from "@/components/quiz/QuizForm";
-import { QuizData, useQuiz } from "@/context/QuizContext";
-import { getUserQuizzes } from "@/lib/firebase";
-import { formatDistanceToNow } from "date-fns";
+import { Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { apiRequest } from "@/lib/queryClient";
 
-interface RecentQuiz {
-  id: string;
-  title: string;
-  quizType: string;
-  createdAt: Date;
-  completed: boolean;
-}
+const formSchema = z.object({
+  topic: z.string().min(3, "Topic must be at least 3 characters"),
+  quizType: z.enum(["multiple-choice", "true-false", "short-answer", "auto"], {
+    required_error: "Please select a quiz type",
+  }),
+  numQuestions: z.number().min(1).max(20),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const GenerateQuiz = () => {
+  const { user, loading: authLoading } = useAuth();
   const [, navigate] = useLocation();
-  const { user, loading } = useAuth();
-  const { loadQuiz } = useQuiz();
   const { toast } = useToast();
-  const [recentQuizzes, setRecentQuizzes] = useState<RecentQuiz[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/login");
-    }
-
-    const fetchRecentQuizzes = async () => {
-      if (!user) return;
-
-      try {
-        setIsLoading(true);
-        const quizzes = await getUserQuizzes(user.uid);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Initialize the form with default values
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      topic: "",
+      quizType: "auto",
+      numQuestions: 5,
+    },
+  });
+  
+  // If not authenticated, redirect to login
+  if (!authLoading && !user) {
+    navigate("/login");
+    return null;
+  }
+  
+  const onSubmit = async (data: FormValues) => {
+    setIsGenerating(true);
+    
+    try {
+      const response = await apiRequest('/api/quiz/generate', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      
+      if (response.quiz) {
+        // Store the generated quiz in local storage
+        localStorage.setItem('generatedQuiz', JSON.stringify(response.quiz));
         
-        const recentQuizzes = quizzes.map((quiz: any) => ({
-          id: quiz.id,
-          title: quiz.title,
-          quizType: quiz.quizType,
-          createdAt: new Date(quiz.createdAt.toDate()),
-          completed: Math.random() > 0.3, // In a real app, this would be determined by quiz attempts
-        }));
-
-        setRecentQuizzes(recentQuizzes.slice(0, 5)); // Limit to 5 recent quizzes
-      } catch (error) {
-        console.error("Error fetching recent quizzes:", error);
         toast({
-          title: "Error",
-          description: "Failed to load recent quizzes",
-          variant: "destructive",
+          title: "Quiz generated!",
+          description: "Your quiz has been successfully created.",
         });
-      } finally {
-        setIsLoading(false);
+        
+        // Navigate to the quiz page
+        navigate("/quiz");
+      } else {
+        throw new Error("Failed to generate quiz");
       }
-    };
-
-    fetchRecentQuizzes();
-  }, [user, loading, navigate, toast]);
-
-  const handleQuizGenerated = (quizData: QuizData) => {
-    loadQuiz(quizData);
-    navigate("/quiz/" + (quizData.id || "new"));
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+      toast({
+        title: "Generation failed",
+        description: "There was a problem generating your quiz. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
-
-  const handleRecentQuizClick = (quizId: string) => {
-    navigate(`/quiz/${quizId}`);
-  };
-
-  if (loading) {
+  
+  if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
-
-  if (!user) {
-    return null; // Will redirect in useEffect
-  }
-
+  
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold font-poppins text-gray-800 mb-2">
-          Generate a New Quiz
-        </h1>
-        <p className="text-gray-600">
-          Enter a topic and our AI will create a custom quiz just for you.
-        </p>
-      </div>
-
-      <div className="bg-white rounded-xl card-shadow p-6 mb-8">
-        <QuizForm onQuizGenerated={handleQuizGenerated} />
-      </div>
-
-      <div className="bg-white rounded-xl card-shadow p-6">
-        <h2 className="text-lg font-semibold font-poppins text-gray-800 mb-4">
-          Recently Generated
-        </h2>
-
-        {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center p-3 rounded-lg animate-pulse"
+    <div className="max-w-3xl mx-auto px-4 py-12">
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">Generate a New Quiz</CardTitle>
+          <CardDescription className="text-center">
+            Use AI to create a customized quiz on any topic
+          </CardDescription>
+        </CardHeader>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="topic"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quiz Topic</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g. Solar System, World War II, Machine Learning..." 
+                        {...field}
+                        disabled={isGenerating}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Enter any topic you want to learn about
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="quizType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quiz Type</FormLabel>
+                    <Select 
+                      disabled={isGenerating}
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select quiz type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="auto">Auto (AI decides best format)</SelectItem>
+                        <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                        <SelectItem value="true-false">True/False</SelectItem>
+                        <SelectItem value="short-answer">Short Answer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose the type of questions for your quiz
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="numQuestions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Number of Questions: {field.value}</FormLabel>
+                    <FormControl>
+                      <Slider
+                        disabled={isGenerating}
+                        value={[field.value]}
+                        min={1}
+                        max={20}
+                        step={1}
+                        onValueChange={(value) => field.onChange(value[0])}
+                        className="py-4"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Choose how many questions you want in your quiz (1-20)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            
+            <CardFooter>
+              <Button 
+                type="submit" 
+                className="w-full gradient-primary" 
+                disabled={isGenerating}
               >
-                <div className="bg-gray-300 text-white rounded-lg w-10 h-10 flex-shrink-0"></div>
-                <div className="ml-3 w-full">
-                  <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
-                <div className="ml-auto">
-                  <div className="h-5 bg-gray-200 rounded-full w-16"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : recentQuizzes.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No recent quizzes generated.</p>
-            <p className="text-sm text-gray-400 mt-1">
-              Use the form above to create your first quiz!
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {recentQuizzes.map((quiz) => (
-              <Button
-                key={quiz.id}
-                variant="ghost"
-                className="flex items-center p-3 rounded-lg hover:bg-secondary transition-all w-full justify-start"
-                onClick={() => handleRecentQuizClick(quiz.id)}
-              >
-                <div className="bg-primary text-white rounded-lg w-10 h-10 flex items-center justify-center flex-shrink-0">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
-                  </svg>
-                </div>
-                <div className="ml-3 text-left">
-                  <h4 className="text-gray-800 font-medium">{quiz.title}</h4>
-                  <p className="text-gray-500 text-xs">
-                    {quiz.quizType.replace(/-/g, " ")} • Generated{" "}
-                    {formatDistanceToNow(quiz.createdAt, { addSuffix: true })}
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <Badge
-                    variant={quiz.completed ? "success" : "info"}
-                    className="rounded-full text-xs"
-                  >
-                    {quiz.completed ? "Completed" : "Saved"}
-                  </Badge>
-                </div>
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Quiz...
+                  </>
+                ) : (
+                  "Generate Quiz"
+                )}
               </Button>
-            ))}
-          </div>
-        )}
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+      
+      <div className="mt-8 bg-muted/50 rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-4">How Quiz Generation Works</h3>
+        <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
+          <li>Enter any topic you're interested in learning about</li>
+          <li>Select your preferred question format or let the AI decide</li>
+          <li>Our AI generates meaningful questions that test your knowledge</li>
+          <li>Take the quiz immediately or save it for later</li>
+          <li>Get instant feedback and explanations to enhance your learning</li>
+        </ol>
       </div>
     </div>
   );
