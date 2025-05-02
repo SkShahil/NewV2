@@ -77,6 +77,18 @@ function App() {
           </ProtectedRoute>
         </Route>
         
+        <Route path="/quiz">
+          <ProtectedRoute>
+            <QuizPage />
+          </ProtectedRoute>
+        </Route>
+        
+        <Route path="/quiz/:id">
+          <ProtectedRoute>
+            <QuizPage />
+          </ProtectedRoute>
+        </Route>
+        
         <Route path="/leaderboard">
           <ProtectedRoute>
             <Leaderboard />
