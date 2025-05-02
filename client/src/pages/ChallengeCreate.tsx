@@ -71,27 +71,36 @@ const ChallengeCreate = () => {
     
     try {
       // API call to create challenge
-      const response = await apiRequest("/api/challenge/create", {
+      const response = await fetch("/api/challenge/create", {
         method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(data)
       });
       
-      if (response && response.success) {
+      if (!response.ok) {
+        throw new Error('Failed to create challenge');
+      }
+      
+      const responseData = await response.json();
+      
+      if (responseData && responseData.success) {
         toast({
           title: "Challenge created!",
           description: "Your friend has been notified of your challenge.",
         });
         
         // Set the challenge link for sharing
-        if (response.challengeLink) {
-          setChallengeLink(response.challengeLink);
+        if (responseData.challengeLink) {
+          setChallengeLink(responseData.challengeLink);
         } else {
-          setChallengeLink(`${window.location.origin}/challenge/accept/${response.token}`);
+          setChallengeLink(`${window.location.origin}/challenge/accept/${responseData.token}`);
         }
         
         setChallengeCreated(true);
       } else {
-        throw new Error(response?.message || "Failed to create challenge");
+        throw new Error(responseData?.message || "Failed to create challenge");
       }
     } catch (error) {
       console.error("Error creating challenge:", error);
