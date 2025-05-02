@@ -24,6 +24,7 @@ import QuizPage from "@/pages/QuizPage";
 import Results from "@/pages/Results";
 import Leaderboard from "@/pages/Leaderboard";
 import ChallengeCreate from "@/pages/ChallengeCreate";
+import ChallengeAccept from "@/pages/ChallengeAccept";
 import Profile from "@/pages/Profile";
 
 function App() {
@@ -116,6 +117,14 @@ function App() {
         <Route path="/challenge/create">
           <ProtectedRoute>
             <ChallengeCreate />
+          </ProtectedRoute>
+        </Route>
+        
+        <Route path="/challenge/:token">
+          <ProtectedRoute>
+            <QuizProvider>
+              <ChallengeAccept />
+            </QuizProvider>
           </ProtectedRoute>
         </Route>
         
