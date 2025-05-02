@@ -110,7 +110,7 @@ const GenerateQuiz = () => {
         };
         
         // Store the generated quiz in local storage
-        localStorage.setItem('currentQuiz', JSON.stringify(generatedQuiz));
+        localStorage.setItem('generatedQuiz', JSON.stringify(generatedQuiz));
         
         toast({
           title: "Quiz generated!",

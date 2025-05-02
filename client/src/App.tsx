@@ -19,6 +19,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
 import GenerateQuiz from "@/pages/GenerateQuiz";
+import QuizPage from "@/pages/QuizPage";
 import Leaderboard from "@/pages/Leaderboard";
 import ChallengeCreate from "@/pages/ChallengeCreate";
 import Profile from "@/pages/Profile";

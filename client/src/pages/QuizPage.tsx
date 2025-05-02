@@ -39,52 +39,72 @@ const QuizPage = () => {
     }
     
     const fetchQuiz = async () => {
-      if (id === 'new') {
-        // For a newly generated quiz, it should already be in the context
-        if (!currentQuiz) {
-          navigate('/quiz/generate');
+      // Check for a newly generated quiz in localStorage
+      const generatedQuizJson = localStorage.getItem('generatedQuiz');
+      
+      if (generatedQuizJson) {
+        try {
+          // Parse and load the generated quiz
+          const generatedQuiz = JSON.parse(generatedQuizJson);
+          console.log("Loading quiz from localStorage:", generatedQuiz);
+          
+          loadQuiz(generatedQuiz);
+          
+          // Clear from localStorage to prevent reloading on refresh
+          localStorage.removeItem('generatedQuiz');
+          
+          setLoading(false);
           return;
+        } catch (error) {
+          console.error("Error parsing generated quiz from localStorage:", error);
         }
-        setLoading(false);
+      }
+      
+      // If we have an ID, try to fetch an existing quiz
+      if (id && id !== 'new') {
+        try {
+          setLoading(true);
+          // For an existing quiz, fetch it from Firebase
+          const fetchedQuiz = await getQuizById(id);
+          
+          if (!fetchedQuiz) {
+            toast({
+              title: 'Quiz Not Found',
+              description: 'The requested quiz could not be found',
+              variant: 'destructive',
+            });
+            navigate('/generate-quiz');
+            return;
+          }
+          
+          // Transform the quiz to match our expected format
+          loadQuiz({
+            id: fetchedQuiz.id,
+            title: fetchedQuiz.title,
+            topic: fetchedQuiz.topic,
+            quizType: fetchedQuiz.quizType,
+            questions: fetchedQuiz.questions as Question[],
+            timeLimit: fetchedQuiz.timeLimit,
+          });
+          
+        } catch (error) {
+          console.error('Error fetching quiz:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load the quiz. Please try again.',
+            variant: 'destructive',
+          });
+          navigate('/generate-quiz');
+        } finally {
+          setLoading(false);
+        }
+      } else if (!currentQuiz) {
+        // No quiz in localStorage or context, redirect to generate page
+        navigate('/generate-quiz');
         return;
       }
       
-      try {
-        setLoading(true);
-        // For an existing quiz, fetch it from Firebase
-        const fetchedQuiz = await getQuizById(id);
-        
-        if (!fetchedQuiz) {
-          toast({
-            title: 'Quiz Not Found',
-            description: 'The requested quiz could not be found',
-            variant: 'destructive',
-          });
-          navigate('/quiz/generate');
-          return;
-        }
-        
-        // Transform the quiz to match our expected format
-        loadQuiz({
-          id: fetchedQuiz.id,
-          title: fetchedQuiz.title,
-          topic: fetchedQuiz.topic,
-          quizType: fetchedQuiz.quizType,
-          questions: fetchedQuiz.questions as Question[],
-          timeLimit: fetchedQuiz.timeLimit,
-        });
-        
-      } catch (error) {
-        console.error('Error fetching quiz:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load the quiz. Please try again.',
-          variant: 'destructive',
-        });
-        navigate('/quiz/generate');
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     };
     
     fetchQuiz();
@@ -94,8 +114,8 @@ const QuizPage = () => {
     
     // Clean up when unmounting
     return () => {
-      // Reset the quiz state if navigating away
-      if (id === 'new' && !isQuizCompleted) {
+      // Reset the quiz state if navigating away without completing
+      if (!isQuizCompleted) {
         resetQuiz();
       }
     };
