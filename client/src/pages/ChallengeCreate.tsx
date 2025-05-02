@@ -1,144 +1,460 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Loader2, ClipboardCheck, ClipboardCopy } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import ChallengeForm from "@/components/challenge/ChallengeForm";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Send, Mail, Clock } from "lucide-react";
+import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+
+const formSchema = z.object({
+  recipientEmail: z.string().email("Please enter a valid email address"),
+  quizType: z.enum(["generate", "existing"], {
+    required_error: "Please select a quiz type",
+  }),
+  topic: z.string().min(3, "Topic must be at least 3 characters").optional(),
+  questionType: z.enum(["multiple-choice", "true-false", "short-answer", "auto"], {
+    required_error: "Please select a question type",
+  }).optional(),
+  numQuestions: z.number().min(1).max(20).optional(),
+  quizId: z.string().optional(),
+  message: z.string().optional(),
+  expiryDays: z.enum(["3", "7", "14", "30"], {
+    required_error: "Please select an expiry period",
+  }),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const ChallengeCreate = () => {
-  const [, navigate] = useLocation();
-  const { user, loading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [challengeCreated, setChallengeCreated] = useState(false);
+  const [challengeLink, setChallengeLink] = useState("");
   const { toast } = useToast();
-  const [challengeToken, setChallengeToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/login");
-    }
-  }, [user, loading, navigate]);
-
-  const handleChallengeCreated = (token: string) => {
-    setChallengeToken(token);
-  };
-
-  const getChallengeUrl = () => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/challenge/${challengeToken}`;
-  };
-
-  const copyToClipboard = async () => {
+  const [, navigate] = useLocation();
+  
+  // Initialize form
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      recipientEmail: "",
+      quizType: "generate",
+      topic: "",
+      questionType: "auto",
+      numQuestions: 5,
+      message: "",
+      expiryDays: "7",
+    },
+  });
+  
+  // Watch for quiz type to conditionally render fields
+  const quizType = form.watch("quizType");
+  
+  // Mock user quizzes data - in a real app, this would come from an API call
+  const userQuizzes = [
+    { id: "quiz1", title: "World Geography" },
+    { id: "quiz2", title: "Ancient History" },
+    { id: "quiz3", title: "Basic Mathematics" },
+    { id: "quiz4", title: "English Literature" },
+    { id: "quiz5", title: "Computer Science Fundamentals" },
+  ];
+  
+  const onSubmit = async (data: FormValues) => {
+    setIsSubmitting(true);
+    
     try {
-      await navigator.clipboard.writeText(getChallengeUrl());
-      setCopied(true);
-      toast({
-        title: "Link Copied!",
-        description: "Challenge link copied to clipboard",
+      // API call to create challenge
+      const response = await apiRequest("/api/challenge/create", {
+        method: "POST",
+        body: JSON.stringify(data)
       });
-
-      // Reset copied state after 3 seconds
-      setTimeout(() => setCopied(false), 3000);
+      
+      if (response && response.success) {
+        toast({
+          title: "Challenge created!",
+          description: "Your friend has been notified of your challenge.",
+        });
+        
+        // Set the challenge link for sharing
+        if (response.challengeLink) {
+          setChallengeLink(response.challengeLink);
+        } else {
+          setChallengeLink(`${window.location.origin}/challenge/accept/${response.token}`);
+        }
+        
+        setChallengeCreated(true);
+      } else {
+        throw new Error(response?.message || "Failed to create challenge");
+      }
     } catch (error) {
-      console.error("Failed to copy:", error);
+      console.error("Error creating challenge:", error);
       toast({
-        title: "Failed to Copy",
-        description: "Could not copy link to clipboard",
+        title: "Challenge creation failed",
+        description: "There was a problem creating your challenge. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  if (loading) {
+  
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(challengeLink).then(() => {
+      toast({
+        title: "Link copied!",
+        description: "Challenge link copied to clipboard.",
+      });
+    });
+  };
+  
+  if (challengeCreated) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center">Challenge Created!</CardTitle>
+            <CardDescription className="text-center">
+              Your challenge has been sent successfully
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="bg-primary/10 p-6 rounded-lg text-center">
+              <Send className="h-12 w-12 text-primary mx-auto mb-4" />
+              <p className="text-gray-700 mb-2">
+                We've sent an invitation to <span className="font-medium">{form.getValues("recipientEmail")}</span>
+              </p>
+              <p className="text-gray-600 text-sm">
+                They'll receive an email with a link to take your challenge
+              </p>
+            </div>
+            
+            <div className="border border-gray-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Challenge link:</p>
+              <div className="flex items-center">
+                <Input value={challengeLink} readOnly className="border-r-0 rounded-r-none" />
+                <Button 
+                  onClick={copyToClipboard}
+                  className="rounded-l-none"
+                  variant="outline"
+                >
+                  Copy
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                You can also share this link directly with your friend
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+              <Mail className="h-4 w-4" />
+              <p>Email sent</p>
+              <span className="mx-2">•</span>
+              <Clock className="h-4 w-4" />
+              <p>Expires in {form.getValues("expiryDays")} days</p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-2">
+            <Button 
+              className="w-full gradient-primary" 
+              onClick={() => setChallengeCreated(false)}
+            >
+              Create Another Challenge
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => navigate("/dashboard")}
+            >
+              Return to Dashboard
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     );
   }
-
-  if (!user) {
-    return null; // Will redirect in useEffect
-  }
-
+  
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold font-poppins text-gray-800 mb-2">
-          Challenge a Friend
-        </h1>
-        <p className="text-gray-600">
-          Select a quiz and send a challenge to test your friend's knowledge.
-        </p>
-      </div>
-
-      {challengeToken ? (
-        <Card className="bg-white rounded-xl card-shadow overflow-hidden">
-          <CardContent className="pt-8 pb-8">
-            <div className="text-center space-y-4">
-              <div className="h-20 w-20 bg-green-100 rounded-full mx-auto flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="36"
-                  height="36"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-green-600"
-                >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                Challenge Created!
-              </h2>
-              <p className="text-gray-600 max-w-md mx-auto">
-                Share this unique link with your friend to challenge them. The link will remain active based on your expiration settings.
-              </p>
-
-              <div className="relative max-w-lg mx-auto mt-4">
-                <div className="border border-gray-300 rounded-lg p-3 bg-gray-50 text-gray-700 pr-12 truncate">
-                  {getChallengeUrl()}
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1/2 -translate-y-1/2"
-                  onClick={copyToClipboard}
-                >
-                  {copied ? (
-                    <ClipboardCheck className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <ClipboardCopy className="h-5 w-5" />
+    <div className="max-w-3xl mx-auto px-4 py-12">
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">Challenge a Friend</CardTitle>
+          <CardDescription className="text-center">
+            Create a quiz challenge and send it to a friend
+          </CardDescription>
+        </CardHeader>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="recipientEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Friend's Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="friend@example.com" 
+                        {...field}
+                        disabled={isSubmitting}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Enter the email address of the person you want to challenge
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="quizType"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Quiz Type</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                        disabled={isSubmitting}
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="generate" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Generate a new quiz
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="existing" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Use an existing quiz
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {quizType === "generate" ? (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="topic"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quiz Topic</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g. World Geography, Physics, Literature..." 
+                            {...field}
+                            disabled={isSubmitting}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Enter the topic for the AI to generate questions about
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="questionType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Question Type</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                            disabled={isSubmitting}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select question type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="auto">Auto (AI decides)</SelectItem>
+                              <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                              <SelectItem value="true-false">True/False</SelectItem>
+                              <SelectItem value="short-answer">Short Answer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Choose the type of questions
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="numQuestions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Questions</FormLabel>
+                          <Select 
+                            onValueChange={(value) => field.onChange(parseInt(value))} 
+                            defaultValue={field.value?.toString()}
+                            disabled={isSubmitting}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select number of questions" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="5">5 questions</SelectItem>
+                              <SelectItem value="10">10 questions</SelectItem>
+                              <SelectItem value="15">15 questions</SelectItem>
+                              <SelectItem value="20">20 questions</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Choose how many questions to include
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="quizId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Quiz</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        disabled={isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select one of your quizzes" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {userQuizzes.map((quiz) => (
+                            <SelectItem key={quiz.id} value={quiz.id}>
+                              {quiz.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose from quizzes you've previously created
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </Button>
-              </div>
-
-              <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
-                <Button
-                  onClick={() => setChallengeToken(null)}
-                  variant="outline"
-                >
-                  Create Another Challenge
-                </Button>
-                <Button onClick={() => navigate("/dashboard")}>
-                  Back to Dashboard
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="bg-white rounded-xl card-shadow p-6 mb-8">
-          <ChallengeForm onChallengeCreated={handleChallengeCreated} />
-        </div>
-      )}
+                />
+              )}
+              
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Personal Message (optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter a message to send with your challenge" 
+                        className="resize-none"
+                        {...field}
+                        disabled={isSubmitting}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Add a personal note to your challenge invitation
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="expiryDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Challenge Expiry</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select expiry period" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="3">3 days</SelectItem>
+                        <SelectItem value="7">1 week</SelectItem>
+                        <SelectItem value="14">2 weeks</SelectItem>
+                        <SelectItem value="30">1 month</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose how long this challenge will be available
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            
+            <CardFooter>
+              <Button 
+                type="submit" 
+                className="w-full gradient-primary" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Challenge...
+                  </>
+                ) : (
+                  "Send Challenge"
+                )}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+      
+      <div className="mt-8 bg-muted/50 rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-4">How Challenges Work</h3>
+        <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
+          <li>Create a new quiz or select one of your existing quizzes</li>
+          <li>Send the challenge to your friend via email</li>
+          <li>Your friend will receive a link to take the quiz</li>
+          <li>Compare your results when they complete the challenge</li>
+          <li>Climb the leaderboard based on your performance</li>
+        </ol>
+      </div>
     </div>
   );
 };

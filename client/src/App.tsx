@@ -9,6 +9,8 @@ import { useTheme } from "next-themes";
 import { useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import SimpleNav from "@/components/SimpleNav";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/context/ProtectedRoute";
 
 // Import pages
 import AboutPage from "@/pages/AboutPage";
@@ -53,11 +55,48 @@ function App() {
         <Route path="/contact" component={ContactPage} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/generate-quiz" component={GenerateQuiz} />
-        <Route path="/quiz/generate" component={GenerateQuiz} />
-        <Route path="/leaderboard" component={Leaderboard} />
-        <Route path="/challenge/create" component={ChallengeCreate} />
+        
+        {/* Protected Routes */}
+        <Route path="/dashboard">
+          <AuthProvider>
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          </AuthProvider>
+        </Route>
+        
+        <Route path="/generate-quiz">
+          <AuthProvider>
+            <ProtectedRoute>
+              <GenerateQuiz />
+            </ProtectedRoute>
+          </AuthProvider>
+        </Route>
+        
+        <Route path="/quiz/generate">
+          <AuthProvider>
+            <ProtectedRoute>
+              <GenerateQuiz />
+            </ProtectedRoute>
+          </AuthProvider>
+        </Route>
+        
+        <Route path="/leaderboard">
+          <AuthProvider>
+            <ProtectedRoute>
+              <Leaderboard />
+            </ProtectedRoute>
+          </AuthProvider>
+        </Route>
+        
+        <Route path="/challenge/create">
+          <AuthProvider>
+            <ProtectedRoute>
+              <ChallengeCreate />
+            </ProtectedRoute>
+          </AuthProvider>
+        </Route>
+        
         <Route component={NotFound} />
       </Switch>
       

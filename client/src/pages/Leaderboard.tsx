@@ -1,308 +1,341 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { useAuth } from '@/context/AuthContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2 } from 'lucide-react';
-import { collection, query, orderBy, limit, getDocs, where, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { getInitials } from '@/lib/utils';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { TrophyIcon, MedalIcon, Clock, BarChart4, User } from "lucide-react";
 
-interface LeaderboardEntry {
-  userId: string;
-  displayName: string;
-  photoURL?: string;
+interface LeaderboardUser {
+  id: string;
+  name: string;
+  photoURL: string | null;
   score: number;
-  quizCount: number;
-  avgAccuracy: number;
-  challengeWins: number;
+  quizzesTaken: number;
+  averageScore: number;
+  rank: number;
 }
 
 const Leaderboard = () => {
-  const [, navigate] = useLocation();
-  const { user, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState('topScorers');
-  const [topScorers, setTopScorers] = useState<LeaderboardEntry[]>([]);
-  const [mostActive, setMostActive] = useState<LeaderboardEntry[]>([]);
+  const [users, setUsers] = useState<LeaderboardUser[]>([]);
+  const [period, setPeriod] = useState<'weekly' | 'monthly' | 'allTime'>('weekly');
   const [loading, setLoading] = useState(true);
-  const [userRank, setUserRank] = useState<{ score: number; active: number } | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchLeaderboardData = async () => {
+    const fetchLeaderboard = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        
-        // Get top scorers (users with highest average scores)
-        const usersRef = collection(db, 'users');
-        const attemptsRef = collection(db, 'quiz_attempts');
-        
-        // Get all attempts for score calculation
-        const attemptsQuery = query(
-          attemptsRef,
-          orderBy('completedAt', 'desc'),
-          where('completedAt', '>', Timestamp.fromDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))) // Last 30 days
-        );
-        const attemptsSnapshot = await getDocs(attemptsQuery);
-        
-        // Get all users
-        const usersSnapshot = await getDocs(usersRef);
-        
-        // Process data to calculate scores
-        const userData: Record<string, any> = {};
-        
-        usersSnapshot.forEach((doc) => {
-          const user = doc.data();
-          userData[doc.id] = {
-            userId: doc.id,
-            displayName: user.displayName || user.email?.split('@')[0] || 'Anonymous',
-            photoURL: user.photoURL,
-            totalScore: 0,
-            quizCount: 0,
-            avgAccuracy: 0,
-            challengeWins: 0,
-          };
+        const response = await apiRequest(`/api/leaderboard?period=${period}`, {
+          method: 'GET',
         });
         
-        // Process attempt data
-        attemptsSnapshot.forEach((doc) => {
-          const attempt = doc.data();
-          const userId = attempt.userId;
-          
-          if (userData[userId]) {
-            userData[userId].totalScore += attempt.score;
-            userData[userId].quizCount += 1;
-          }
-        });
-        
-        // Calculate average scores
-        Object.keys(userData).forEach((userId) => {
-          if (userData[userId].quizCount > 0) {
-            userData[userId].avgAccuracy = Math.round(userData[userId].totalScore / userData[userId].quizCount);
-          }
-        });
-        
-        // Convert to array and sort for both leaderboards
-        const userArray = Object.values(userData);
-        
-        // Only include users who have taken at least one quiz
-        const activeUsers = userArray.filter((u: any) => u.quizCount > 0);
-        
-        // Top scorers (by average accuracy)
-        const sortedByScore = [...activeUsers].sort((a: any, b: any) => b.avgAccuracy - a.avgAccuracy);
-        setTopScorers(sortedByScore.slice(0, 10));
-        
-        // Most active (by quiz count)
-        const sortedByActivity = [...activeUsers].sort((a: any, b: any) => b.quizCount - a.quizCount);
-        setMostActive(sortedByActivity.slice(0, 10));
-        
-        // Find current user's rank
-        if (user) {
-          const scoreRank = sortedByScore.findIndex((entry: any) => entry.userId === user.uid) + 1;
-          const activeRank = sortedByActivity.findIndex((entry: any) => entry.userId === user.uid) + 1;
-          
-          setUserRank({
-            score: scoreRank > 0 ? scoreRank : sortedByScore.length + 1,
-            active: activeRank > 0 ? activeRank : sortedByActivity.length + 1
-          });
+        if (response && response.users) {
+          setUsers(response.users);
         }
-        
       } catch (error) {
-        console.error('Error fetching leaderboard data:', error);
+        console.error("Error fetching leaderboard:", error);
+        toast({
+          title: "Failed to load leaderboard",
+          description: "There was a problem loading the leaderboard data.",
+          variant: "destructive",
+        });
+        
+        // For now, use placeholder data for development
+        setUsers([
+          {
+            id: '1',
+            name: 'Sarah Johnson',
+            photoURL: null,
+            score: 1850,
+            quizzesTaken: 28,
+            averageScore: 87.3,
+            rank: 1
+          },
+          {
+            id: '2',
+            name: 'Michael Chen',
+            photoURL: null,
+            score: 1720,
+            quizzesTaken: 24,
+            averageScore: 85.9,
+            rank: 2
+          },
+          {
+            id: '3',
+            name: 'Aisha Patel',
+            photoURL: null,
+            score: 1640,
+            quizzesTaken: 22,
+            averageScore: 82.1,
+            rank: 3
+          },
+          {
+            id: '4',
+            name: 'Carlos Rodriguez',
+            photoURL: null,
+            score: 1580,
+            quizzesTaken: 20,
+            averageScore: 80.7,
+            rank: 4
+          },
+          {
+            id: '5',
+            name: 'Emma Wilson',
+            photoURL: null,
+            score: 1490,
+            quizzesTaken: 19,
+            averageScore: 78.4,
+            rank: 5
+          },
+          {
+            id: '6',
+            name: 'Jamal Williams',
+            photoURL: null,
+            score: 1450,
+            quizzesTaken: 18,
+            averageScore: 77.2,
+            rank: 6
+          },
+          {
+            id: '7',
+            name: 'Olivia Martinez',
+            photoURL: null,
+            score: 1390,
+            quizzesTaken: 17,
+            averageScore: 75.9,
+            rank: 7
+          },
+          {
+            id: '8',
+            name: 'David Kim',
+            photoURL: null,
+            score: 1310,
+            quizzesTaken: 15,
+            averageScore: 74.3,
+            rank: 8
+          },
+          {
+            id: '9',
+            name: 'Sophie Brown',
+            photoURL: null,
+            score: 1250,
+            quizzesTaken: 14,
+            averageScore: 72.8,
+            rank: 9
+          },
+          {
+            id: '10',
+            name: 'Ahmed Hassan',
+            photoURL: null,
+            score: 1190,
+            quizzesTaken: 12,
+            averageScore: 71.5,
+            rank: 10
+          }
+        ]);
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchLeaderboardData();
-  }, [user]);
 
-  if (authLoading || loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+    fetchLeaderboard();
+  }, [period, toast]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold font-poppins text-gray-800 mb-2">Leaderboard</h1>
-        <p className="text-gray-600">See how you rank against other MindMash users.</p>
+    <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Global Leaderboard</h1>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          See how you stack up against other learners. Earn points by completing quizzes and 
+          challenges to climb the rankings.
+        </p>
       </div>
 
-      {user && userRank && (
-        <Card className="bg-primary text-white mb-6">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Avatar className="h-12 w-12 border-2 border-white">
-                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
-                  <AvatarFallback className="bg-accent text-white">
-                    {getInitials(user.displayName || user.email || "U")}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="ml-4">
-                  <p className="text-sm opacity-80">Your Ranking</p>
-                  <h3 className="text-xl font-semibold">
-                    {user.displayName || user.email?.split('@')[0]}
-                  </h3>
-                </div>
-              </div>
-              <div className="flex space-x-6">
-                <div className="text-center">
-                  <p className="text-2xl font-bold">{userRank.score}</p>
-                  <p className="text-xs opacity-80">Score Rank</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold">{userRank.active}</p>
-                  <p className="text-xs opacity-80">Activity Rank</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Tabs defaultValue="weekly" className="mb-8">
+        <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
+          <TabsTrigger value="weekly" onClick={() => setPeriod('weekly')}>Weekly</TabsTrigger>
+          <TabsTrigger value="monthly" onClick={() => setPeriod('monthly')}>Monthly</TabsTrigger>
+          <TabsTrigger value="allTime" onClick={() => setPeriod('allTime')}>All Time</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-      <Tabs defaultValue="topScorers" onValueChange={setActiveTab} className="w-full">
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="topScorers">Top Scorers</TabsTrigger>
-            <TabsTrigger value="mostActive">Most Active</TabsTrigger>
-          </TabsList>
-          <p className="text-sm text-gray-500">
-            Leaderboard updates daily
-          </p>
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
-        
-        <TabsContent value="topScorers" className="mt-0">
-          <Card>
-            <CardContent className="p-0">
-              <div className="bg-primary text-white py-3 px-4 rounded-t-lg">
-                <div className="grid grid-cols-12 gap-4 text-sm font-medium">
-                  <div className="col-span-1 text-center">#</div>
-                  <div className="col-span-5">User</div>
-                  <div className="col-span-2 text-center">Avg. Score</div>
-                  <div className="col-span-2 text-center">Quizzes</div>
-                  <div className="col-span-2 text-center">Accuracy</div>
-                </div>
-              </div>
-              
-              <div className="divide-y">
-                {topScorers.length === 0 ? (
-                  <div className="py-8 text-center text-gray-500">
-                    No data available yet
-                  </div>
-                ) : (
-                  topScorers.map((entry, index) => (
-                    <div 
-                      key={entry.userId}
-                      className={`grid grid-cols-12 gap-4 py-3 px-4 items-center ${
-                        user && entry.userId === user.uid ? 'bg-secondary' : ''
-                      }`}
-                    >
-                      <div className="col-span-1 text-center font-bold">
-                        {index === 0 ? (
-                          <span className="text-yellow-500 text-lg">🥇</span>
-                        ) : index === 1 ? (
-                          <span className="text-gray-400 text-lg">🥈</span>
-                        ) : index === 2 ? (
-                          <span className="text-amber-700 text-lg">🥉</span>
-                        ) : (
-                          `${index + 1}`
-                        )}
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Top 3 Users */}
+          <div className="lg:col-span-4">
+            <div className="flex flex-col md:flex-row gap-4 justify-center mb-8">
+              {/* 2nd place */}
+              {users.length > 1 && (
+                <div className="flex-1 max-w-xs">
+                  <Card className="bg-gray-50 border-gray-200 transition h-full">
+                    <CardContent className="pt-6 pb-4 px-6 text-center">
+                      <div className="w-16 h-16 rounded-full bg-secondary/30 mx-auto flex items-center justify-center mb-4">
+                        <MedalIcon className="h-8 w-8 text-secondary" />
                       </div>
-                      <div className="col-span-5 flex items-center">
-                        <Avatar className="h-8 w-8 mr-2">
-                          <AvatarImage src={entry.photoURL} alt={entry.displayName} />
-                          <AvatarFallback className="bg-primary text-white text-xs">
-                            {getInitials(entry.displayName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="truncate">{entry.displayName}</span>
-                      </div>
-                      <div className="col-span-2 text-center font-medium">
-                        {entry.avgAccuracy}%
-                      </div>
-                      <div className="col-span-2 text-center">
-                        {entry.quizCount}
-                      </div>
-                      <div className="col-span-2 text-center">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mx-auto">
-                          <div 
-                            className="bg-primary h-2.5 rounded-full" 
-                            style={{ width: `${entry.avgAccuracy}%` }}
-                          ></div>
+                      <div className="mb-2">
+                        <div className="w-20 h-20 rounded-full bg-gray-200 mx-auto overflow-hidden border-4 border-secondary">
+                          {users[1].photoURL ? (
+                            <img src={users[1].photoURL} alt={users[1].name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-secondary/20">
+                              <User className="h-10 w-10 text-secondary" />
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="mostActive" className="mt-0">
-          <Card>
-            <CardContent className="p-0">
-              <div className="bg-accent text-white py-3 px-4 rounded-t-lg">
-                <div className="grid grid-cols-12 gap-4 text-sm font-medium">
-                  <div className="col-span-1 text-center">#</div>
-                  <div className="col-span-5">User</div>
-                  <div className="col-span-3 text-center">Quizzes Taken</div>
-                  <div className="col-span-3 text-center">Avg. Score</div>
+                      <h3 className="text-lg font-bold">{users[1].name}</h3>
+                      <p className="text-2xl font-bold text-secondary mt-2">{users[1].score} pts</p>
+                      <div className="mt-4 flex justify-center gap-2 text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>{users[1].quizzesTaken} quizzes</span>
+                        </div>
+                        <div className="flex items-center">
+                          <BarChart4 className="h-3 w-3 mr-1" />
+                          <span>{users[1].averageScore}%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </div>
-              
-              <div className="divide-y">
-                {mostActive.length === 0 ? (
-                  <div className="py-8 text-center text-gray-500">
-                    No data available yet
-                  </div>
-                ) : (
-                  mostActive.map((entry, index) => (
-                    <div 
-                      key={entry.userId}
-                      className={`grid grid-cols-12 gap-4 py-3 px-4 items-center ${
-                        user && entry.userId === user.uid ? 'bg-secondary' : ''
-                      }`}
-                    >
-                      <div className="col-span-1 text-center font-bold">
-                        {index === 0 ? (
-                          <span className="text-yellow-500 text-lg">🏆</span>
-                        ) : index === 1 ? (
-                          <span className="text-gray-400 text-lg">🏆</span>
-                        ) : index === 2 ? (
-                          <span className="text-amber-700 text-lg">🏆</span>
-                        ) : (
-                          `${index + 1}`
-                        )}
+              )}
+
+              {/* 1st place */}
+              {users.length > 0 && (
+                <div className="flex-1 max-w-xs">
+                  <Card className="bg-gradient-to-b from-primary/10 to-primary/5 border-primary/20 shadow-lg transform md:scale-110 transition h-full">
+                    <CardContent className="pt-6 pb-4 px-6 text-center">
+                      <div className="w-16 h-16 rounded-full bg-primary/30 mx-auto flex items-center justify-center mb-4">
+                        <TrophyIcon className="h-8 w-8 text-primary" />
                       </div>
-                      <div className="col-span-5 flex items-center">
-                        <Avatar className="h-8 w-8 mr-2">
-                          <AvatarImage src={entry.photoURL} alt={entry.displayName} />
-                          <AvatarFallback className="bg-accent text-white text-xs">
-                            {getInitials(entry.displayName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="truncate">{entry.displayName}</span>
+                      <div className="mb-2">
+                        <div className="w-24 h-24 rounded-full bg-gray-200 mx-auto overflow-hidden border-4 border-primary">
+                          {users[0].photoURL ? (
+                            <img src={users[0].photoURL} alt={users[0].name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-primary/20">
+                              <User className="h-12 w-12 text-primary" />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="col-span-3 text-center font-medium">
-                        {entry.quizCount}
+                      <h3 className="text-xl font-bold">{users[0].name}</h3>
+                      <p className="text-3xl font-bold text-primary mt-2">{users[0].score} pts</p>
+                      <div className="mt-4 flex justify-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>{users[0].quizzesTaken} quizzes</span>
+                        </div>
+                        <div className="flex items-center">
+                          <BarChart4 className="h-3 w-3 mr-1" />
+                          <span>{users[0].averageScore}%</span>
+                        </div>
                       </div>
-                      <div className="col-span-3 text-center">
-                        {entry.avgAccuracy}%
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* 3rd place */}
+              {users.length > 2 && (
+                <div className="flex-1 max-w-xs">
+                  <Card className="bg-gray-50 border-gray-200 transition h-full">
+                    <CardContent className="pt-6 pb-4 px-6 text-center">
+                      <div className="w-16 h-16 rounded-full bg-amber-500/30 mx-auto flex items-center justify-center mb-4">
+                        <MedalIcon className="h-8 w-8 text-amber-500" />
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                      <div className="mb-2">
+                        <div className="w-20 h-20 rounded-full bg-gray-200 mx-auto overflow-hidden border-4 border-amber-500">
+                          {users[2].photoURL ? (
+                            <img src={users[2].photoURL} alt={users[2].name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-amber-500/20">
+                              <User className="h-10 w-10 text-amber-500" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-bold">{users[2].name}</h3>
+                      <p className="text-2xl font-bold text-amber-500 mt-2">{users[2].score} pts</p>
+                      <div className="mt-4 flex justify-center gap-2 text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>{users[2].quizzesTaken} quizzes</span>
+                        </div>
+                        <div className="flex items-center">
+                          <BarChart4 className="h-3 w-3 mr-1" />
+                          <span>{users[2].averageScore}%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Rest of Leaderboard */}
+          <div className="lg:col-span-4">
+            <Card>
+              <CardHeader className="pb-0">
+                <CardTitle>Rankings</CardTitle>
+                <CardDescription>See how users compare by score</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mt-4">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3">Rank</th>
+                        <th className="px-6 py-3">User</th>
+                        <th className="px-6 py-3 text-center">Quizzes</th>
+                        <th className="px-6 py-3 text-center">Avg. Score</th>
+                        <th className="px-6 py-3 text-right">Points</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {users.slice(3).map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50 transition">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {user.rank}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden mr-3">
+                                {user.photoURL ? (
+                                  <img src={user.photoURL} alt={user.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center bg-primary/10">
+                                    <User className="h-6 w-6 text-primary" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                            {user.quizzesTaken}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                            {user.averageScore}%
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                            {user.score} pts
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
