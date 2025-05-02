@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { getUserAttempts } from "@/lib/firebase";
+import { getUserAttempts, auth } from "@/lib/firebase";
 import { formatDistanceToNow } from "date-fns";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface Activity {
   id: string;
@@ -12,9 +12,18 @@ interface Activity {
 }
 
 const ActivityList = () => {
-  const { user } = useAuth();
+  const [user, setUser] = useState<any>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Listen to auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchActivity = async () => {

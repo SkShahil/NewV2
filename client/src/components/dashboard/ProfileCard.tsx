@@ -17,6 +17,26 @@ const ProfileCard = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Effect to listen to auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      
+      if (currentUser) {
+        try {
+          // Get user document from Firestore
+          const userDoc = await getUserDocument(currentUser.uid);
+          setUserData(userDoc);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
+  // Effect to fetch user stats
   useEffect(() => {
     const fetchUserStats = async () => {
       if (!user) return;

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { getUserChallenges, updateChallengeStatus } from "@/lib/firebase";
+import { getUserChallenges, updateChallengeStatus, auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { getInitials } from "@/lib/utils";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface Challenge {
   id: string;
@@ -19,10 +19,19 @@ interface Challenge {
 }
 
 const ChallengeList = () => {
-  const { user } = useAuth();
+  const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Listen to auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchChallenges = async () => {

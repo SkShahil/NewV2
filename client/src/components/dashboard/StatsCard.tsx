@@ -1,10 +1,10 @@
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { getUserAttempts, getUserChallenges } from "@/lib/firebase";
+import { getUserAttempts, getUserChallenges, auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 const StatsCard = () => {
-  const { user } = useAuth();
+  const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState({
     accuracy: 0,
     winRate: 0,
@@ -12,6 +12,15 @@ const StatsCard = () => {
     totalSubjects: 12
   });
   const [loading, setLoading] = useState(true);
+
+  // Listen to auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
