@@ -84,6 +84,9 @@ const GenerateQuiz = () => {
     }
     
     try {
+      console.log('Generating quiz with data:', data);
+      console.log('Using auth token (first 20 chars):', authToken?.substring(0, 20) + '...');
+      
       const response = await fetch('/api/quiz/generate', {
         method: 'POST',
         headers: {
@@ -93,13 +96,18 @@ const GenerateQuiz = () => {
         body: JSON.stringify(data),
       });
       
+      console.log('Response status:', response.status);
       const responseData = await response.json();
+      console.log('Response data:', responseData);
       
       if (!response.ok) {
+        console.error('Error response:', responseData);
         throw new Error(responseData.message || responseData.error || 'Failed to generate quiz');
       }
       
       if (responseData.questions && Array.isArray(responseData.questions)) {
+        console.log('Questions received successfully, count:', responseData.questions.length);
+        
         // Create a quiz object with the generated questions
         const generatedQuiz = {
           title: `${data.topic} Quiz`,
@@ -108,6 +116,8 @@ const GenerateQuiz = () => {
           questions: responseData.questions,
           timeLimit: 10 // Default time limit of 10 minutes
         };
+        
+        console.log('Storing quiz in localStorage:', generatedQuiz);
         
         // Store the generated quiz in local storage
         localStorage.setItem('generatedQuiz', JSON.stringify(generatedQuiz));
