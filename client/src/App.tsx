@@ -335,13 +335,13 @@ function HomePage() {
           </h2>
           <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
             <div className="inline-flex rounded-md shadow">
-              <Button size="lg" className="bg-white text-primary hover:bg-gray-50">
-                Get started
+              <Button size="lg" className="bg-white text-primary hover:bg-gray-50" asChild>
+                <Link href="/signup">Get started</Link>
               </Button>
             </div>
             <div className="ml-3 inline-flex rounded-md shadow">
-              <Button size="lg" variant="outline" className="bg-primary text-white border-white hover:bg-primary/90">
-                Learn more
+              <Button size="lg" variant="outline" className="bg-primary text-white border-white hover:bg-primary/90" asChild>
+                <Link href="/about">Learn more</Link>
               </Button>
             </div>
           </div>

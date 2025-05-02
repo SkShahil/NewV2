@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User, AlertCircle } from "lucide-react";
+import { signupWithEmail, loginWithGoogle, updateUserProfile, createUserDocument } from "@/lib/firebase";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Signup = () => {
   const [, navigate] = useLocation();
@@ -17,7 +19,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     
@@ -26,14 +28,51 @@ const Signup = () => {
       return;
     }
     
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+    
     setLoading(true);
     
-    // Simulate signup
-    setTimeout(() => {
-      console.log("Sign up with:", name, email, password);
+    try {
+      // Actual Firebase signup
+      const userCredential = await signupWithEmail(email, password);
+      
+      // Update user profile with display name
+      await updateUserProfile(userCredential.user, { displayName: name });
+      
+      // Create user document in Firestore
+      await createUserDocument(userCredential.user, { displayName: name });
+      
+      console.log("Signup successful");
       navigate("/dashboard");
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      setError(err.message || "Failed to sign up. Please try again.");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+  
+  const handleGoogleSignup = async () => {
+    setError("");
+    setLoading(true);
+    
+    try {
+      const result = await loginWithGoogle();
+      
+      // Create user document in Firestore if it's a new user
+      await createUserDocument(result.user);
+      
+      console.log("Google signup successful");
+      navigate("/dashboard");
+    } catch (err: any) {
+      console.error("Google signup error:", err);
+      setError(err.message || "Failed to sign up with Google. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,9 +87,10 @@ const Signup = () => {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">
-                {error}
-              </div>
+              <Alert variant="destructive" className="text-sm py-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
@@ -93,7 +133,7 @@ const Signup = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={8}
+                  minLength={6}
                 />
                 <Button 
                   type="button"
@@ -106,7 +146,7 @@ const Signup = () => {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Password must be at least 8 characters long
+                Password must be at least 6 characters long
               </p>
             </div>
             <div className="space-y-2">
@@ -125,14 +165,37 @@ const Signup = () => {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-2">
+          <CardFooter className="flex flex-col gap-3">
             <Button 
               type="submit" 
               className="w-full gradient-primary"
               disabled={loading}
             >
-              {loading ? "Creating account..." : "Sign up"}
+              {loading ? "Creating account..." : "Sign up with Email"}
             </Button>
+            
+            <div className="relative flex items-center">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="flex-shrink mx-4 text-gray-600 text-sm">or</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+            
+            <Button 
+              type="button" 
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleSignup}
+              disabled={loading}
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path
+                  fill="currentColor"
+                  d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032 c0-3.331,2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2 C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" 
+                />
+              </svg>
+              Continue with Google
+            </Button>
+            
             <p className="text-sm text-center text-muted-foreground mt-2">
               Already have an account?{" "}
               <Link href="/login" className="text-primary hover:underline">
