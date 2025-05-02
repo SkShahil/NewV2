@@ -13,6 +13,9 @@ import {
 import { auth, createUserDocument, getUserDocument } from '@/lib/firebase';
 import { useLocation } from 'wouter';
 
+// Console log for debugging purposes - remove in production
+console.log('AuthContext file is loaded');
+
 interface AuthContextType {
   user: User | null;
   userData: any | null;
