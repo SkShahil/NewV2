@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useState, useEffect } from "react";
+import { auth } from "@/lib/firebase";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/queryClient";
+import { onAuthStateChanged } from "firebase/auth";
 
 const formSchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters"),
@@ -25,10 +26,21 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const GenerateQuiz = () => {
-  const { user, loading: authLoading } = useAuth();
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Listen to auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, []);
   
   // Initialize the form with default values
   const form = useForm<FormValues>({
@@ -50,14 +62,23 @@ const GenerateQuiz = () => {
     setIsGenerating(true);
     
     try {
-      const response = await apiRequest('/api/quiz/generate', {
+      const response = await fetch('/api/quiz/generate', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(data),
       });
       
-      if (response.quiz) {
+      if (!response.ok) {
+        throw new Error('Failed to generate quiz');
+      }
+      
+      const responseData = await response.json();
+      
+      if (responseData.quiz) {
         // Store the generated quiz in local storage
-        localStorage.setItem('generatedQuiz', JSON.stringify(response.quiz));
+        localStorage.setItem('generatedQuiz', JSON.stringify(responseData.quiz));
         
         toast({
           title: "Quiz generated!",
