@@ -46,7 +46,13 @@ const Login = () => {
       navigate("/dashboard");
     } catch (err: any) {
       console.error("Google login error:", err);
-      setError(err.message || "Failed to login with Google. Please try again.");
+      
+      // Show a more specific error message for auth/unauthorized-domain
+      if (err.code === "auth/unauthorized-domain") {
+        setError("This domain is not authorized for Google authentication. Please try email login instead.");
+      } else {
+        setError(err.message || "Failed to login with Google. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

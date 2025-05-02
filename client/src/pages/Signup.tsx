@@ -69,7 +69,13 @@ const Signup = () => {
       navigate("/dashboard");
     } catch (err: any) {
       console.error("Google signup error:", err);
-      setError(err.message || "Failed to sign up with Google. Please try again.");
+      
+      // Show a more specific error message for auth/unauthorized-domain
+      if (err.code === "auth/unauthorized-domain") {
+        setError("This domain is not authorized for Google authentication. Please try email signup instead.");
+      } else {
+        setError(err.message || "Failed to sign up with Google. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

@@ -15,6 +15,10 @@ import AboutPage from "@/pages/AboutPage";
 import ContactPage from "@/pages/ContactPage";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
+import Dashboard from "@/pages/Dashboard";
+import GenerateQuiz from "@/pages/GenerateQuiz";
+import Leaderboard from "@/pages/Leaderboard";
+import ChallengeCreate from "@/pages/ChallengeCreate";
 
 function App() {
   const [location] = useLocation();
@@ -49,7 +53,11 @@ function App() {
         <Route path="/contact" component={ContactPage} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
-        <Route path="/dashboard" component={HomePage} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/generate-quiz" component={GenerateQuiz} />
+        <Route path="/quiz/generate" component={GenerateQuiz} />
+        <Route path="/leaderboard" component={Leaderboard} />
+        <Route path="/challenge/create" component={ChallengeCreate} />
         <Route component={NotFound} />
       </Switch>
       
@@ -245,9 +253,9 @@ function HomePage() {
               <p className="text-gray-600 mb-4">
                 Create competitive quizzes and challenge your friends. Send quiz invitations via email and see who scores higher.
               </p>
-              <a href="#" className="text-primary font-medium flex items-center group">
+              <Link href="/challenge-create" className="text-primary font-medium flex items-center group">
                 Learn more <ChevronRightIcon className="ml-1 h-4 w-4 group-hover:ml-2 transition-all" />
-              </a>
+              </Link>
             </div>
             
             <div className="p-6 bg-white rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
@@ -258,9 +266,9 @@ function HomePage() {
               <p className="text-gray-600 mb-4">
                 Compete on global leaderboards, earn badges for your achievements, and track your progress over time.
               </p>
-              <a href="#" className="text-primary font-medium flex items-center group">
+              <Link href="/leaderboard" className="text-primary font-medium flex items-center group">
                 Learn more <ChevronRightIcon className="ml-1 h-4 w-4 group-hover:ml-2 transition-all" />
-              </a>
+              </Link>
             </div>
           </div>
         </div>
