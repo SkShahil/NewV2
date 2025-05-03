@@ -68,10 +68,29 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
   
   // Load a quiz
   const loadQuiz = useCallback((quiz: QuizData) => {
+    console.log("QuizContext: loadQuiz called with:", quiz);
+    
+    if (!quiz) {
+      console.error("QuizContext: Attempted to load null or undefined quiz");
+      return;
+    }
+    
+    if (!quiz.questions || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+      console.error("QuizContext: Quiz has no questions or invalid questions array:", quiz.questions);
+      toast({
+        title: 'Error Loading Quiz',
+        description: 'The quiz appears to be invalid or contains no questions.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setCurrentQuiz(quiz);
     setCurrentQuestion(0);
     setUserAnswers([]);
     setIsQuizCompleted(false);
+    
+    console.log("QuizContext: Quiz loaded successfully with", quiz.questions.length, "questions");
     
     // Set up timer if timeLimit is provided
     if (quiz.timeLimit) {
@@ -79,7 +98,7 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setTimeLeft(null);
     }
-  }, []);
+  }, [toast]);
   
   // Start the quiz and timer
   const startQuiz = useCallback(() => {

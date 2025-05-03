@@ -119,16 +119,38 @@ const GenerateQuiz = () => {
         
         console.log('Storing quiz in localStorage:', generatedQuiz);
         
-        // Store the generated quiz in local storage
-        localStorage.setItem('generatedQuiz', JSON.stringify(generatedQuiz));
-        
-        toast({
-          title: "Quiz generated!",
-          description: "Your quiz has been successfully created.",
-        });
-        
-        // Navigate to the quiz page
-        navigate("/quiz");
+        try {
+          // Store the generated quiz in local storage
+          localStorage.setItem('generatedQuiz', JSON.stringify(generatedQuiz));
+          
+          console.log('Successfully stored quiz in localStorage');
+          
+          toast({
+            title: "Quiz generated!",
+            description: "Your quiz has been successfully created.",
+          });
+          
+          // Ensure toast is shown before navigation
+          setTimeout(() => {
+            console.log('Navigating to /quiz...');
+            
+            // Check if the current route might already be /quiz (which could cause issues)
+            if (location[0] === '/quiz') {
+              console.log('Already at /quiz, forcing reload');
+              window.location.reload();
+            } else {
+              // Navigate to the quiz page
+              navigate("/quiz");
+            }
+          }, 100);
+        } catch (err) {
+          console.error('Error during post-generation process:', err);
+          toast({
+            title: "Error",
+            description: "There was a problem processing the quiz. Please try again.",
+            variant: "destructive"
+          });
+        }
       } else {
         console.error("Invalid response format:", responseData);
         throw new Error("Quiz generation failed - invalid response format");
