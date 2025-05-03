@@ -8,6 +8,7 @@ import { QuizPlayer } from '@/components/quiz';
 import { useQuiz } from '@/context/QuizContext';
 import { getQuizById } from '@/lib/firebase';
 import { Question } from '@/lib/gemini';
+import type { QuizData } from '@/context/QuizContext';
 
 const QuizPage = () => {
   const { id } = useParams();
@@ -47,11 +48,14 @@ const QuizPage = () => {
   
   useEffect(() => {
     if (!authLoading && !user) {
+      console.log("User not authenticated, redirecting to login");
       navigate('/login');
       return;
     }
     
     const fetchQuiz = async () => {
+      console.log("fetchQuiz called in QuizPage, id:", id);
+      
       // Check for a newly generated quiz in localStorage
       const generatedQuizJson = localStorage.getItem('generatedQuiz');
       
@@ -61,7 +65,12 @@ const QuizPage = () => {
           const generatedQuiz = JSON.parse(generatedQuizJson);
           console.log("Loading quiz from localStorage:", generatedQuiz);
           
+          // Debug the content of the quiz
+          console.log("Quiz has", generatedQuiz.questions?.length || 0, "questions");
+          console.log("First question:", generatedQuiz.questions?.[0]);
+          
           loadQuiz(generatedQuiz);
+          console.log("Quiz loaded into context");
           
           // Clear from localStorage to prevent reloading on refresh
           localStorage.removeItem('generatedQuiz');
@@ -71,6 +80,8 @@ const QuizPage = () => {
         } catch (error) {
           console.error("Error parsing generated quiz from localStorage:", error);
         }
+      } else {
+        console.log("No generatedQuiz found in localStorage");
       }
       
       // If we have an ID, try to fetch an existing quiz
@@ -91,14 +102,20 @@ const QuizPage = () => {
           }
           
           // Transform the quiz to match our expected format
-          loadQuiz({
-            id: fetchedQuiz.id,
-            title: fetchedQuiz.title,
-            topic: fetchedQuiz.topic,
-            quizType: fetchedQuiz.quizType,
-            questions: fetchedQuiz.questions as Question[],
-            timeLimit: fetchedQuiz.timeLimit,
-          });
+          if (typeof fetchedQuiz === 'object' && fetchedQuiz !== null) {
+            const quizData: QuizData = {
+              id: fetchedQuiz.id,
+              title: fetchedQuiz.title || 'Untitled Quiz',
+              topic: fetchedQuiz.topic || 'General Knowledge',
+              quizType: (fetchedQuiz.quizType as 'multiple-choice' | 'true-false' | 'short-answer') || 'multiple-choice',
+              questions: Array.isArray(fetchedQuiz.questions) ? fetchedQuiz.questions as Question[] : [],
+              timeLimit: typeof fetchedQuiz.timeLimit === 'number' ? fetchedQuiz.timeLimit : undefined,
+            };
+            
+            loadQuiz(quizData);
+          } else {
+            throw new Error('Invalid quiz data returned from server');
+          }
           
         } catch (error) {
           console.error('Error fetching quiz:', error);
