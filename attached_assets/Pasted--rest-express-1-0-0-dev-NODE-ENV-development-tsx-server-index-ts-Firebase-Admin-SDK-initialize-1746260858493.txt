@@ -1,0 +1,72 @@
+ rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+Firebase Admin SDK initialized with project ID only
+8:20:03 AM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Quiz generation request received: {
+  body: { topic: 'Maths', quizType: 'auto', numQuestions: 5 },
+  headers: {
+    authorization: 'Bearer [present]',
+    'content-type': 'application/json'
+  }
+}
+Auth verification called with token length: 1130
+Auth verification called with token length: 1130
+Extracted user ID from token: AmCa9RztilgA4gDkBe2MZ9yg2MA2
+Extracted user ID from token: AmCa9RztilgA4gDkBe2MZ9yg2MA2
+Generating quiz with params: {
+  topic: 'Maths',
+  quizType: 'auto',
+  numQuestions: 5,
+  userId: 'AmCa9RztilgA4gDkBe2MZ9yg2MA2'
+}
+generateQuiz called with params: { topic: 'Maths', quizType: 'auto', numQuestions: 5 }
+API_KEY exists: true
+Initializing Gemini model: gemini-1.5-flash
+Auto quiz type selected, determining best type for topic
+Quiz type determined: multiple-choice
+Building prompt for multiple-choice quiz with 5 questions
+Sending request to Gemini API
+Received response from Gemini API
+Response text length: 1593
+Parsing response to extract questions
+Successfully parsed 5 questions
+Quiz generated successfully with 5 questions
+Saving quiz to Firestore
+Quiz saved to Firestore with ID: undefined
+8:21:16 AM [express] POST /api/quiz/generate 200 in 5485ms :: {"message":"Quiz generated successfull…
+Quiz generation request received: {
+  body: { topic: 'Maths', quizType: 'auto', numQuestions: 5 },
+  headers: {
+    authorization: 'Bearer [present]',
+    'content-type': 'application/json'
+  }
+}
+Auth verification called with token length: 1130
+Auth verification called with token length: 1130
+Extracted user ID from token: AmCa9RztilgA4gDkBe2MZ9yg2MA2
+Extracted user ID from token: AmCa9RztilgA4gDkBe2MZ9yg2MA2
+Generating quiz with params: {
+  topic: 'Maths',
+  quizType: 'auto',
+  numQuestions: 5,
+  userId: 'AmCa9RztilgA4gDkBe2MZ9yg2MA2'
+}
+generateQuiz called with params: { topic: 'Maths', quizType: 'auto', numQuestions: 5 }
+API_KEY exists: true
+Initializing Gemini model: gemini-1.5-flash
+Auto quiz type selected, determining best type for topic
+Quiz type determined: multiple-choice
+Building prompt for multiple-choice quiz with 5 questions
+Sending request to Gemini API
+Received response from Gemini API
+Response text length: 1666
+Parsing response to extract questions
+Successfully parsed 5 questions
+Quiz generated successfully with 5 questions
+Saving quiz to Firestore
+Quiz saved to Firestore with ID: undefined
+8:21:38 AM [express] POST /api/quiz/generate 200 in 5451ms :: {"message":"Quiz generated successfull…
