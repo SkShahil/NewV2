@@ -112,10 +112,12 @@ const GenerateQuiz = () => {
         const generatedQuiz = {
           title: `${data.topic} Quiz`,
           topic: data.topic,
-          quizType: data.quizType,
+          quizType: data.quizType === 'auto' ? 'multiple-choice' : data.quizType, // Convert 'auto' to a specific type for display 
           questions: responseData.questions,
           timeLimit: 10 // Default time limit of 10 minutes
         };
+        
+        console.log('Generated quiz with type:', data.quizType, 'converted to:', generatedQuiz.quizType);
         
         console.log('Storing quiz in localStorage:', generatedQuiz);
         
