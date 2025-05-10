@@ -15,6 +15,7 @@ import { generateQuizAttemptPDF, generateAnswerKeyPDF } from '@/lib/pdfGenerator
 interface QuestionResult {
   questionId: string;
   question: string;
+  options?: string[];
   userAnswer: string | string[];
   correctAnswer: string | string[];
   isCorrect: boolean;
@@ -25,6 +26,8 @@ interface ResultsData {
   id: string;
   quizId: string;
   quizTitle: string;
+  quizTopic?: string;
+  quizType?: 'multiple-choice' | 'true-false' | 'short-answer' | 'auto';
   userId: string;
   score: number;
   totalQuestions: number;
