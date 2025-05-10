@@ -87,8 +87,9 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
   }, []);
   
   const handleOptionSelect = (option: string) => {
+    console.log('Option selected:', option);
     setSelectedOption(option);
-    onAnswer(option);
+    // Don't auto-submit the answer until the user clicks Next
   };
   
   const handleShortAnswerSubmit = async () => {
@@ -148,7 +149,11 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
         return;
       }
       
-      // For multiple choice and true/false, we already know if it's correct
+      // Submit the answer when clicking Next
+      console.log('Submitting answer:', selectedOption);
+      onAnswer(selectedOption);
+      
+      // Then advance to the next question
       onNext();
     }
   };
@@ -185,6 +190,31 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
     <div className="bg-white rounded-xl card-shadow p-6">
       {/* Quiz Header */}
       <div className="mb-6">
+        {/* Progress Indicator */}
+        <div className="flex justify-center mb-3 gap-2">
+          {quiz.questions.map((_, index) => {
+            // Check if this question has been answered
+            const isAnswered = userAnswers.some(a => a.questionId === quiz.questions[index].id);
+            // Check if this is the current question
+            const isCurrent = index === currentQuestion;
+            
+            return (
+              <div 
+                key={index} 
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                  isCurrent 
+                    ? 'bg-blue-500 text-white' // Current question
+                    : isAnswered 
+                      ? 'bg-green-500 text-white' // Answered
+                      : 'bg-orange-400 text-white' // Not answered
+                }`}
+              >
+                {index + 1}
+              </div>
+            );
+          })}
+        </div>
+        
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-xl font-bold font-poppins text-gray-800">{quiz.title}</h1>
           <div className="flex items-center space-x-2">
