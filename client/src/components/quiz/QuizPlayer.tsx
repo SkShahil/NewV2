@@ -87,9 +87,9 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
   }, []);
   
   const handleOptionSelect = (option: string) => {
-    console.log('Option selected:', option);
+    console.log('QuizPlayer - Option selected:', option);
     setSelectedOption(option);
-    // Don't auto-submit the answer until the user clicks Next
+    // Store selection but don't navigate yet - that happens on Next click
   };
   
   const handleShortAnswerSubmit = async () => {
@@ -150,11 +150,17 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
       }
       
       // Submit the answer when clicking Next
-      console.log('Submitting answer:', selectedOption);
+      console.log('QuizPlayer - Submitting answer:', selectedOption);
+      
+      // Force submission of answer with the current selection
       onAnswer(selectedOption);
       
-      // Then advance to the next question
-      onNext();
+      // Wait a moment to ensure state is updated before navigation
+      setTimeout(() => {
+        // Then advance to the next question
+        console.log('QuizPlayer - Moving to next question');
+        onNext();
+      }, 50);
     }
   };
   
@@ -162,7 +168,27 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
     if (quiz.quizType === 'short-answer' && !currentAnswer) {
       handleShortAnswerSubmit();
     } else {
-      onComplete();
+      // For multiple choice, make sure we have an answer first
+      if (!selectedOption && quiz.quizType !== 'short-answer') {
+        toast({
+          title: "Selection Required",
+          description: "Please select an answer before completing",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Submit the final answer before completing
+      if (selectedOption && quiz.quizType !== 'short-answer') {
+        console.log('QuizPlayer - Submitting final answer before completion:', selectedOption);
+        onAnswer(selectedOption);
+      }
+      
+      // Small delay to ensure answer is recorded before completion
+      setTimeout(() => {
+        console.log('QuizPlayer - Completing quiz');
+        onComplete();
+      }, 50);
     }
   };
   

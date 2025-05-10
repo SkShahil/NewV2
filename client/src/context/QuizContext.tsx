@@ -146,10 +146,18 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
   
   // Navigate to next question
   const nextQuestion = useCallback(() => {
-    if (!currentQuiz) return;
+    if (!currentQuiz) {
+      console.log("QuizContext - nextQuestion - No current quiz");
+      return;
+    }
+    
+    console.log("QuizContext - nextQuestion - Current question:", currentQuestion, "Total questions:", currentQuiz.questions.length);
     
     if (currentQuestion < currentQuiz.questions.length - 1) {
+      console.log("QuizContext - Moving to next question:", currentQuestion + 1);
       setCurrentQuestion(currentQuestion + 1);
+    } else {
+      console.log("QuizContext - Already at last question, not advancing");
     }
   }, [currentQuiz, currentQuestion]);
   
@@ -164,10 +172,14 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
   const answerQuestion = useCallback((answer: string | string[]) => {
     if (!currentQuiz) return;
     
+    console.log("QuizContext - Recording answer:", answer);
+    
     const question = currentQuiz.questions[currentQuestion];
     const isCorrect = Array.isArray(question.correctAnswer)
       ? JSON.stringify(answer) === JSON.stringify(question.correctAnswer)
       : answer === question.correctAnswer;
+    
+    console.log("QuizContext - Answer correct:", isCorrect);
     
     setUserAnswers((prev) => {
       // Find if this question has been answered before
