@@ -45,17 +45,26 @@
     --card-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --primary: 27 100% 40%; /* Darker Orange for dark mode */
+    
+    /* Improved contrast colors for dark mode - better for colorblind users */
+    --primary: 27 100% 55%; /* Brighter Orange for dark mode */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --accent: 116 65% 30%; /* Darker Green for dark mode */
+    --secondary: 240 5% 25%; /* Slightly lighter secondary for contrast */
+    --secondary-foreground: 0 0% 100%; /* White text on darker background */
+    --accent: 116 65% 45%; /* Brighter Green for dark mode */
     --accent-foreground: 0 0% 100%;
-    --tertiary: 211 100% 40%; /* Darker Blue for dark mode */
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --ring: 27 100% 40%;
+    --destructive: 0 70% 50%; /* Brighter Red for dark mode */
+    --destructive-foreground: 0 0% 100%;
+    --tertiary: 211 100% 60%; /* Brighter Blue for dark mode */
+    --ring: 27 100% 55%;
     --radius: 0.5rem;
+    
+    /* Chart colors with improved contrast */
+    --chart-1: 27 100% 55%; /* Brighter Orange */
+    --chart-2: 0 0% 85%;    /* Light Gray instead of White */
+    --chart-3: 116 65% 45%; /* Brighter Green */
+    --chart-4: 211 100% 60%; /* Brighter Blue */
+    --chart-5: 0 70% 50%; /* Brighter Red */
   }
 }
 
