@@ -89,7 +89,11 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
   const handleOptionSelect = (option: string) => {
     console.log('QuizPlayer - Option selected:', option);
     setSelectedOption(option);
-    // Store selection but don't navigate yet - that happens on Next click
+    
+    // Immediately submit answer to context - this is critical for remembering selections!
+    onAnswer(option);
+    
+    // Don't auto-navigate - let user click Next to proceed
   };
   
   const handleShortAnswerSubmit = async () => {
@@ -149,18 +153,11 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
         return;
       }
       
-      // Submit the answer when clicking Next
-      console.log('QuizPlayer - Submitting answer:', selectedOption);
+      // The answer has already been submitted in handleOptionSelect
+      console.log('QuizPlayer - Moving to next question');
       
-      // Force submission of answer with the current selection
-      onAnswer(selectedOption);
-      
-      // Wait a moment to ensure state is updated before navigation
-      setTimeout(() => {
-        // Then advance to the next question
-        console.log('QuizPlayer - Moving to next question');
-        onNext();
-      }, 50);
+      // Simply advance to the next question
+      onNext();
     }
   };
   
