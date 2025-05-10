@@ -187,7 +187,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl card-shadow p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
       {/* Quiz Header */}
       <div className="mb-6">
         {/* Progress Indicator */}
@@ -216,7 +216,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
         </div>
         
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-xl font-bold font-poppins text-gray-800">{quiz.title}</h1>
+          <h1 className="text-xl font-bold font-poppins text-gray-800 dark:text-white">{quiz.title}</h1>
           <div className="flex items-center space-x-2">
             <Button
               onClick={toggleTextToSpeech}
@@ -259,7 +259,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
 
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center">
-            <span className="text-sm font-medium text-gray-700">Question</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Question</span>
             <span className="ml-2 px-2 py-0.5 bg-primary text-white text-xs font-medium rounded-full">
               {currentQuestion + 1}/{quiz.questions.length}
             </span>
@@ -270,7 +270,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {formatTime(timeLeft)}
               </span>
             </div>
@@ -283,7 +283,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
 
       {/* Quiz Question */}
       <div className="mb-8">
-        <h2 className="text-lg font-medium text-gray-800 mb-6">{question.question}</h2>
+        <h2 className="text-lg font-medium text-gray-800 dark:text-white mb-6">{question.question}</h2>
         
         {/* Multiple Choice Options */}
         {quiz.quizType === 'multiple-choice' && question.options && (
