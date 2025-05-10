@@ -4,7 +4,8 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { QuizPlayer } from '@/components/quiz';
+// import { QuizPlayer } from '@/components/quiz';
+import FixedQuizPlayer from '@/components/quiz/FixedQuizPlayer';
 import { useQuiz } from '@/context/QuizContext';
 import { getQuizById } from '@/lib/firebase';
 import { Question } from '@/lib/gemini';
@@ -291,16 +292,13 @@ const QuizPage = () => {
           </div>
         </div>
       ) : (
-        <QuizPlayer
+        <FixedQuizPlayer
           quiz={currentQuiz}
-          currentQuestion={currentQuestion}
-          onAnswer={answerQuestion}
-          onPrevious={previousQuestion}
-          onNext={nextQuestion}
-          onComplete={handleCompleteQuiz}
-          userAnswers={userAnswers}
-          timeLeft={timeLeft}
-          textToSpeech={textToSpeech}
+          onComplete={(answers) => {
+            console.log("Quiz completed with answers:", answers);
+            // Mark as completed and save
+            completeQuiz();
+          }}
         />
       )}
     </div>
