@@ -56,18 +56,18 @@ const QuizPage = () => {
     const fetchQuiz = async () => {
       console.log("fetchQuiz called in QuizPage, id:", id);
       
-      // Check for a newly generated quiz in localStorage
-      const generatedQuizJson = localStorage.getItem('generatedQuiz');
+      // Try to get quiz from sessionStorage (preferred way now)
+      const currentQuizJson = sessionStorage.getItem('currentQuiz');
       
-      if (generatedQuizJson) {
+      if (currentQuizJson) {
         try {
           // Parse and load the generated quiz
-          const generatedQuiz = JSON.parse(generatedQuizJson);
-          console.log("Loading quiz from localStorage:", generatedQuiz);
+          const quizData = JSON.parse(currentQuizJson);
+          console.log("Loading quiz from sessionStorage:", quizData);
           
           // Validate quiz data
-          if (!generatedQuiz || !generatedQuiz.questions || !Array.isArray(generatedQuiz.questions)) {
-            console.error("Invalid quiz data structure:", generatedQuiz);
+          if (!quizData || !quizData.questions || !Array.isArray(quizData.questions)) {
+            console.error("Invalid quiz data structure:", quizData);
             toast({
               title: "Error Loading Quiz",
               description: "The quiz data appears to be invalid. Please try generating a new quiz.",
@@ -78,36 +78,54 @@ const QuizPage = () => {
           }
           
           // Debug the content of the quiz
-          console.log("Quiz has", generatedQuiz.questions.length, "questions");
-          console.log("First question:", generatedQuiz.questions[0]);
-          console.log("Quiz type:", generatedQuiz.quizType);
+          console.log("Quiz has", quizData.questions.length, "questions");
+          console.log("First question:", quizData.questions[0]);
+          console.log("Quiz type:", quizData.quizType);
           
           // Ensure quiz type is compatible
-          if (generatedQuiz.quizType === 'auto') {
-            generatedQuiz.quizType = 'multiple-choice';
+          if (quizData.quizType === 'auto') {
+            quizData.quizType = 'multiple-choice';
             console.log("Converted 'auto' quiz type to 'multiple-choice'");
           }
           
-          loadQuiz(generatedQuiz);
-          console.log("Quiz loaded into context successfully");
+          // Load the quiz immediately and force state update
+          loadQuiz(quizData);
+          console.log("Quiz loaded into context successfully from sessionStorage");
           
-          // Clear from localStorage to prevent reloading on refresh
-          localStorage.removeItem('generatedQuiz');
-          
+          // Don't clear from sessionStorage immediately to allow for page refreshes
           setLoading(false);
           return;
         } catch (error) {
-          console.error("Error parsing generated quiz from localStorage:", error);
-          toast({
-            title: "Error",
-            description: "There was a problem loading your quiz. Please try generating a new one.",
-            variant: "destructive"
-          });
-          navigate('/generate-quiz');
-          return;
+          console.error("Error parsing quiz from sessionStorage:", error);
         }
       } else {
-        console.log("No generatedQuiz found in localStorage");
+        console.log("No currentQuiz found in sessionStorage");
+      }
+      
+      // Fallback to localStorage for backward compatibility
+      const generatedQuizJson = localStorage.getItem('generatedQuiz');
+      
+      if (generatedQuizJson) {
+        try {
+          const generatedQuiz = JSON.parse(generatedQuizJson);
+          console.log("Loading quiz from localStorage (legacy):", generatedQuiz);
+          
+          if (!generatedQuiz.questions || !Array.isArray(generatedQuiz.questions)) {
+            throw new Error("Invalid quiz data");
+          }
+          
+          if (generatedQuiz.quizType === 'auto') {
+            generatedQuiz.quizType = 'multiple-choice';
+          }
+          
+          loadQuiz(generatedQuiz);
+          localStorage.removeItem('generatedQuiz');
+          setLoading(false);
+          return;
+        } catch (error) {
+          console.error("Error with localStorage quiz:", error);
+          localStorage.removeItem('generatedQuiz');
+        }
       }
       
       // If we have an ID, try to fetch an existing quiz
@@ -202,15 +220,34 @@ const QuizPage = () => {
   if (!currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
     console.log("No quiz data available in the component render function");
     
-    // Try one more time to get quiz from localStorage
-    const lastChanceQuiz = localStorage.getItem('generatedQuiz');
+    // Try one more time to get quiz from sessionStorage
+    const lastChanceQuiz = sessionStorage.getItem('currentQuiz');
     if (lastChanceQuiz) {
       try {
         const parsedQuiz = JSON.parse(lastChanceQuiz);
-        console.log("Found quiz in localStorage during render, loading now");
+        console.log("Found quiz in sessionStorage during render, loading now");
+        
+        // Fix quiz type if needed
+        if (parsedQuiz.quizType === 'auto') {
+          parsedQuiz.quizType = 'multiple-choice';
+        }
+        
+        // Force immediate load
         setTimeout(() => loadQuiz(parsedQuiz), 0);
       } catch (e) {
-        console.error("Error parsing quiz from localStorage in render:", e);
+        console.error("Error parsing quiz from sessionStorage in render:", e);
+      }
+    } else {
+      // Final attempt from localStorage (legacy)
+      const legacyQuiz = localStorage.getItem('generatedQuiz');
+      if (legacyQuiz) {
+        try {
+          const parsedLegacyQuiz = JSON.parse(legacyQuiz);
+          console.log("Found quiz in localStorage during render (legacy fallback)");
+          setTimeout(() => loadQuiz(parsedLegacyQuiz), 0);
+        } catch (e) {
+          console.error("Error parsing legacy quiz:", e);
+        }
       }
     }
     

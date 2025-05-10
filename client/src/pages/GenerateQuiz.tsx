@@ -122,30 +122,34 @@ const GenerateQuiz = () => {
         console.log('Storing quiz in localStorage:', generatedQuiz);
         
         try {
-          // Store the generated quiz in local storage
-          localStorage.setItem('generatedQuiz', JSON.stringify(generatedQuiz));
+          // Store the generated quiz in a special sessionStorage key
+          // This is more reliable than localStorage for page navigation
+          sessionStorage.setItem('currentQuiz', JSON.stringify(generatedQuiz));
           
-          console.log('Successfully stored quiz in localStorage');
+          console.log('Successfully stored quiz in sessionStorage');
           
           toast({
             title: "Quiz generated!",
             description: "Your quiz has been successfully created.",
           });
           
+          // Create a unique flag to ensure the quiz page loads this quiz
+          const timestamp = new Date().getTime();
+          sessionStorage.setItem('quizTimestamp', timestamp.toString());
+          
           // Ensure toast is shown before navigation
           setTimeout(() => {
             console.log('Navigating to /quiz...');
             
-            console.log('Current location:', location);
+            // Navigate to quiz page with a timestamp parameter to prevent caching issues
+            const quizUrl = `/quiz?t=${timestamp}`;
+            console.log('Navigating to:', quizUrl);
             
-            // Use direct window location navigation for more reliable page transition
-            console.log('Navigating to quiz page using window.location.href');
-            
-            // This is a more forceful navigation approach
-            window.location.href = window.location.origin + '/quiz';
+            // Use direct window location navigation
+            window.location.href = window.location.origin + quizUrl;
             
             console.log('Navigation requested via window.location');
-          }, 100);
+          }, 200);
         } catch (err) {
           console.error('Error during post-generation process:', err);
           toast({
