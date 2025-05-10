@@ -12,7 +12,7 @@ interface QuizPlayerProps {
     title: string;
     questions: Question[];
     timeLimit?: number;
-    quizType: 'multiple-choice' | 'true-false' | 'short-answer';
+    quizType: 'multiple-choice' | 'true-false' | 'short-answer' | 'auto';
   };
   currentQuestion: number;
   onAnswer: (answer: string | string[]) => void;

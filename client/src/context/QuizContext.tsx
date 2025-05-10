@@ -24,7 +24,7 @@ export interface QuizData {
   id?: string;
   title: string;
   topic: string;
-  quizType: 'multiple-choice' | 'true-false' | 'short-answer';
+  quizType: 'multiple-choice' | 'true-false' | 'short-answer' | 'auto';
   questions: Question[];
   timeLimit?: number; // in minutes
 }
@@ -75,7 +75,17 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
-    if (!quiz.questions || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+    // Create a safe copy of the quiz with default values where needed
+    const safeQuiz: QuizData = {
+      id: quiz.id,
+      title: quiz.title || 'Untitled Quiz',
+      topic: quiz.topic || 'General Knowledge',
+      quizType: (quiz.quizType as 'multiple-choice' | 'true-false' | 'short-answer' | 'auto') || 'multiple-choice',
+      questions: Array.isArray(quiz.questions) ? quiz.questions : [],
+      timeLimit: typeof quiz.timeLimit === 'number' ? quiz.timeLimit : 10,
+    };
+    
+    if (!safeQuiz.questions.length) {
       console.error("QuizContext: Quiz has no questions or invalid questions array:", quiz.questions);
       toast({
         title: 'Error Loading Quiz',
@@ -85,16 +95,22 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
-    setCurrentQuiz(quiz);
+    // Log detailed quiz info for debugging
+    console.log("QuizContext: Setting current quiz with ID:", safeQuiz.id);
+    console.log("QuizContext: Quiz topic:", safeQuiz.topic);
+    console.log("QuizContext: Quiz type:", safeQuiz.quizType);
+    console.log("QuizContext: First question:", safeQuiz.questions[0]);
+    
+    setCurrentQuiz(safeQuiz);
     setCurrentQuestion(0);
     setUserAnswers([]);
     setIsQuizCompleted(false);
     
-    console.log("QuizContext: Quiz loaded successfully with", quiz.questions.length, "questions");
+    console.log("QuizContext: Quiz loaded successfully with", safeQuiz.questions.length, "questions");
     
     // Set up timer if timeLimit is provided
-    if (quiz.timeLimit) {
-      setTimeLeft(quiz.timeLimit * 60); // Convert to seconds
+    if (safeQuiz.timeLimit) {
+      setTimeLeft(safeQuiz.timeLimit * 60); // Convert to seconds
     } else {
       setTimeLeft(null);
     }
