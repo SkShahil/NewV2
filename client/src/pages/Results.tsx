@@ -5,11 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Share2, Download, ArrowLeft } from 'lucide-react';
+import { Loader2, Share2, Download, ArrowLeft, FileCheck, FileQuestion } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getDoc, doc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { generateQuizAttemptPDF, generateAnswerKeyPDF } from '@/lib/pdfGenerator';
 
 interface QuestionResult {
   questionId: string;
@@ -164,6 +165,87 @@ const Results = () => {
     }
   };
 
+  // Download attempted quiz as PDF
+  const handleDownloadAttempt = () => {
+    if (!results) return;
+    
+    try {
+      // Convert results to format expected by PDF generator
+      const quizData = {
+        id: results.quizId,
+        title: results.quizTitle,
+        topic: results.quizTopic || "Quiz",
+        quizType: results.quizType || "multiple-choice",
+        questions: results.questions.map(q => ({
+          id: q.questionId,
+          question: q.question,
+          options: q.options || [],
+          correctAnswer: q.correctAnswer
+        }))
+      };
+      
+      // Convert answers to format expected by PDF generator
+      const userAnswers = results.questions.map(q => ({
+        questionId: q.questionId,
+        userAnswer: q.userAnswer,
+        isCorrect: q.isCorrect
+      }));
+      
+      // Generate PDF
+      generateQuizAttemptPDF(quizData, userAnswers);
+      
+      toast({
+        title: "PDF Generated",
+        description: "Your quiz attempt has been downloaded as a PDF",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Could not generate PDF",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Download answer key as PDF
+  const handleDownloadAnswerKey = () => {
+    if (!results) return;
+    
+    try {
+      // Convert results to format expected by PDF generator
+      const quizData = {
+        id: results.quizId,
+        title: results.quizTitle,
+        topic: results.quizTopic || "Quiz",
+        quizType: results.quizType || "multiple-choice",
+        questions: results.questions.map(q => ({
+          id: q.questionId,
+          question: q.question,
+          options: q.options || [],
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation
+        }))
+      };
+      
+      // Generate PDF
+      generateAnswerKeyPDF(quizData);
+      
+      toast({
+        title: "Answer Key Generated",
+        description: "The answer key has been downloaded as a PDF",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Could not generate answer key PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Original download function (text format)
   const handleDownload = () => {
     if (!results) return;
 
