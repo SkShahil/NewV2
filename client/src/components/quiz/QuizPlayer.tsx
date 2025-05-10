@@ -293,8 +293,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
                 key={idx}
                 className={`w-full text-left p-4 border ${
                   selectedOption === option
-                    ? 'border-primary bg-primary bg-opacity-10'
-                    : 'border-gray-200'
+                    ? 'border-primary bg-primary bg-opacity-10 dark:bg-opacity-30'
+                    : 'border-gray-200 dark:border-gray-600'
                 } rounded-lg hover:bg-secondary transition-all quiz-option`}
                 onClick={() => handleOptionSelect(option)}
               >
@@ -310,7 +310,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
                       </svg>
                     )}
                   </span>
-                  <span className="text-gray-800">{option}</span>
+                  <span className="text-gray-800 dark:text-white">{option}</span>
                 </div>
               </button>
             ))}
@@ -325,8 +325,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
                 key={option}
                 className={`w-full text-left p-4 border ${
                   selectedOption === option
-                    ? 'border-primary bg-primary bg-opacity-10'
-                    : 'border-gray-200'
+                    ? 'border-primary bg-primary bg-opacity-10 dark:bg-opacity-30'
+                    : 'border-gray-200 dark:border-gray-600'
                 } rounded-lg hover:bg-secondary transition-all quiz-option`}
                 onClick={() => handleOptionSelect(option)}
               >
@@ -342,7 +342,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
                       </svg>
                     )}
                   </span>
-                  <span className="text-gray-800">{option}</span>
+                  <span className="text-gray-800 dark:text-white">{option}</span>
                 </div>
               </button>
             ))}
