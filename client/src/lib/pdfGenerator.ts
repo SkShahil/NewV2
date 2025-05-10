@@ -1,5 +1,12 @@
 import jsPDF from 'jspdf';
-import { QuizData } from '@/context/QuizContext';
+import type { QuizData } from '@/context/QuizContext';
+
+// Safe string function to prevent undefined errors
+function safeString(text: string | string[] | undefined): string {
+  if (text === undefined) return '';
+  if (Array.isArray(text)) return text.join(', ');
+  return text;
+}
 
 // Function to generate PDF with user's attempted answers
 export function generateQuizAttemptPDF(
@@ -11,11 +18,11 @@ export function generateQuizAttemptPDF(
   
   // Set title
   doc.setFontSize(20);
-  doc.text(`${quiz.title} - Your Attempt`, 20, 20);
+  doc.text(`${safeString(quiz.title)} - Your Attempt`, 20, 20);
   
   // Set topic
   doc.setFontSize(14);
-  doc.text(`Topic: ${quiz.topic}`, 20, 30);
+  doc.text(`Topic: ${safeString(quiz.topic)}`, 20, 30);
   
   // Set date
   doc.setFontSize(12);
@@ -36,7 +43,7 @@ export function generateQuizAttemptPDF(
     
     // Question
     doc.setFontSize(14);
-    doc.text(`Question ${index + 1}: ${question.question}`, 20, y);
+    doc.text(`Question ${index + 1}: ${safeString(question.question)}`, 20, y);
     y += 10;
     
     // If it has options, list them
@@ -50,11 +57,11 @@ export function generateQuizAttemptPDF(
             : userAnswer.userAnswer === option);
         
         if (isSelected) {
-          doc.setFont(undefined, 'bold');
-          doc.text(`${String.fromCharCode(65 + optionIndex)}. ${option} ← Your answer`, 30, y);
-          doc.setFont(undefined, 'normal');
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${String.fromCharCode(65 + optionIndex)}. ${safeString(option)} ← Your answer`, 30, y);
+          doc.setFont('helvetica', 'normal');
         } else {
-          doc.text(`${String.fromCharCode(65 + optionIndex)}. ${option}`, 30, y);
+          doc.text(`${String.fromCharCode(65 + optionIndex)}. ${safeString(option)}`, 30, y);
         }
         y += 8;
       });
@@ -74,7 +81,7 @@ export function generateQuizAttemptPDF(
   });
   
   // Save the PDF
-  doc.save(`${quiz.title}-Your-Attempt.pdf`);
+  doc.save(`${safeString(quiz.title)}-Your-Attempt.pdf`);
 }
 
 // Function to generate PDF with correct answers and explanations
@@ -84,11 +91,11 @@ export function generateAnswerKeyPDF(quiz: QuizData) {
   
   // Set title
   doc.setFontSize(20);
-  doc.text(`${quiz.title} - Answer Key`, 20, 20);
+  doc.text(`${safeString(quiz.title)} - Answer Key`, 20, 20);
   
   // Set topic
   doc.setFontSize(14);
-  doc.text(`Topic: ${quiz.topic}`, 20, 30);
+  doc.text(`Topic: ${safeString(quiz.topic)}`, 20, 30);
   
   let y = 40;
   
@@ -102,7 +109,7 @@ export function generateAnswerKeyPDF(quiz: QuizData) {
     
     // Question
     doc.setFontSize(14);
-    doc.text(`Question ${index + 1}: ${question.question}`, 20, y);
+    doc.text(`Question ${index + 1}: ${safeString(question.question)}`, 20, y);
     y += 10;
     
     // If it has options, list them
@@ -115,21 +122,18 @@ export function generateAnswerKeyPDF(quiz: QuizData) {
           : question.correctAnswer === option;
         
         if (isCorrect) {
-          doc.setFont(undefined, 'bold');
-          doc.text(`${String.fromCharCode(65 + optionIndex)}. ${option} ✓ Correct`, 30, y);
-          doc.setFont(undefined, 'normal');
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${String.fromCharCode(65 + optionIndex)}. ${safeString(option)} ✓ Correct`, 30, y);
+          doc.setFont('helvetica', 'normal');
         } else {
-          doc.text(`${String.fromCharCode(65 + optionIndex)}. ${option}`, 30, y);
+          doc.text(`${String.fromCharCode(65 + optionIndex)}. ${safeString(option)}`, 30, y);
         }
         y += 8;
       });
     } else {
       // For short answer
       doc.setFontSize(12);
-      doc.text('Correct answer: ' + 
-        (Array.isArray(question.correctAnswer) 
-          ? question.correctAnswer.join(', ')
-          : question.correctAnswer), 30, y);
+      doc.text('Correct answer: ' + safeString(question.correctAnswer), 30, y);
       y += 8;
     }
     
@@ -139,7 +143,7 @@ export function generateAnswerKeyPDF(quiz: QuizData) {
       doc.setTextColor(0, 102, 204); // Blue text
       
       // Split long explanations into multiple lines
-      const splitText = doc.splitTextToSize(question.explanation, 160);
+      const splitText = doc.splitTextToSize(safeString(question.explanation), 160);
       doc.text(splitText, 30, y);
       y += 8 * splitText.length;
       
@@ -150,5 +154,5 @@ export function generateAnswerKeyPDF(quiz: QuizData) {
   });
   
   // Save the PDF
-  doc.save(`${quiz.title}-Answer-Key.pdf`);
+  doc.save(`${safeString(quiz.title)}-Answer-Key.pdf`);
 }
