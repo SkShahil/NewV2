@@ -5,6 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Loader2, Share2, Download, ArrowLeft, FileCheck, FileQuestion } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getDoc, doc } from 'firebase/firestore';
@@ -324,15 +330,58 @@ const Results = () => {
             <h1 className="text-2xl font-bold font-poppins text-gray-800">Quiz Results</h1>
             <p className="text-gray-600">{results.quizTitle}</p>
           </div>
-          <div className="flex space-x-2 mt-4 sm:mt-0">
-            <Button variant="outline" size="sm" onClick={handleShare}>
-              <Share2 className="mr-2 h-4 w-4" />
-              Share
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
+          <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
+            <div className="md:hidden w-full">
+              <div className="flex flex-row gap-2 mb-2">
+                <Button variant="outline" size="sm" onClick={handleShare} className="flex-1">
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownloadAttempt} className="flex-1">
+                  <FileCheck className="mr-2 h-4 w-4" />
+                  PDF Report
+                </Button>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleDownloadAnswerKey} className="w-full">
+                <FileQuestion className="mr-2 h-4 w-4" />
+                Answer Key
+              </Button>
+            </div>
+            
+            <div className="hidden md:flex md:space-x-2">
+              <Button variant="outline" size="sm" onClick={handleShare}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
+              </Button>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={handleDownloadAttempt}>
+                      <FileCheck className="mr-2 h-4 w-4" />
+                      PDF Report
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Download your quiz attempt as a PDF report</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={handleDownloadAnswerKey}>
+                      <FileQuestion className="mr-2 h-4 w-4" />
+                      Answer Key
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Download answer key with explanations</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
         </div>
 
