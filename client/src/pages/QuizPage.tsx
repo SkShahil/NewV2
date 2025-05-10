@@ -65,12 +65,31 @@ const QuizPage = () => {
           const generatedQuiz = JSON.parse(generatedQuizJson);
           console.log("Loading quiz from localStorage:", generatedQuiz);
           
+          // Validate quiz data
+          if (!generatedQuiz || !generatedQuiz.questions || !Array.isArray(generatedQuiz.questions)) {
+            console.error("Invalid quiz data structure:", generatedQuiz);
+            toast({
+              title: "Error Loading Quiz",
+              description: "The quiz data appears to be invalid. Please try generating a new quiz.",
+              variant: "destructive"
+            });
+            navigate('/generate-quiz');
+            return;
+          }
+          
           // Debug the content of the quiz
-          console.log("Quiz has", generatedQuiz.questions?.length || 0, "questions");
-          console.log("First question:", generatedQuiz.questions?.[0]);
+          console.log("Quiz has", generatedQuiz.questions.length, "questions");
+          console.log("First question:", generatedQuiz.questions[0]);
+          console.log("Quiz type:", generatedQuiz.quizType);
+          
+          // Ensure quiz type is compatible
+          if (generatedQuiz.quizType === 'auto') {
+            generatedQuiz.quizType = 'multiple-choice';
+            console.log("Converted 'auto' quiz type to 'multiple-choice'");
+          }
           
           loadQuiz(generatedQuiz);
-          console.log("Quiz loaded into context");
+          console.log("Quiz loaded into context successfully");
           
           // Clear from localStorage to prevent reloading on refresh
           localStorage.removeItem('generatedQuiz');
@@ -79,6 +98,13 @@ const QuizPage = () => {
           return;
         } catch (error) {
           console.error("Error parsing generated quiz from localStorage:", error);
+          toast({
+            title: "Error",
+            description: "There was a problem loading your quiz. Please try generating a new one.",
+            variant: "destructive"
+          });
+          navigate('/generate-quiz');
+          return;
         }
       } else {
         console.log("No generatedQuiz found in localStorage");
