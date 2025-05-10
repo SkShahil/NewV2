@@ -295,7 +295,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
                   selectedOption === option
                     ? 'border-primary bg-primary bg-opacity-10 dark:bg-opacity-30'
                     : 'border-gray-200 dark:border-gray-600'
-                } rounded-lg hover:bg-secondary transition-all quiz-option`}
+                } rounded-lg hover:bg-secondary dark:hover:bg-gray-700 transition-all quiz-option`}
                 onClick={() => handleOptionSelect(option)}
               >
                 <div className="flex items-center">
@@ -327,7 +327,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
                   selectedOption === option
                     ? 'border-primary bg-primary bg-opacity-10 dark:bg-opacity-30'
                     : 'border-gray-200 dark:border-gray-600'
-                } rounded-lg hover:bg-secondary transition-all quiz-option`}
+                } rounded-lg hover:bg-secondary dark:hover:bg-gray-700 transition-all quiz-option`}
                 onClick={() => handleOptionSelect(option)}
               >
                 <div className="flex items-center">
@@ -356,7 +356,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
               <input
                 ref={answerInputRef}
                 type="text"
-                className="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 placeholder="Type your answer here..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -375,7 +375,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
                 </div>
               )}
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-300">
               Press Enter to submit your answer or use the buttons below.
             </p>
           </div>
