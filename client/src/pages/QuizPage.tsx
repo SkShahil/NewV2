@@ -195,10 +195,38 @@ const QuizPage = () => {
     );
   }
   
-  if (!user || !currentQuiz) {
-    return null; // Will redirect in useEffect
+  if (!user) {
+    return null; // Will redirect to login in useEffect
   }
   
+  if (!currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
+    console.log("No quiz data available in the component render function");
+    
+    // Try one more time to get quiz from localStorage
+    const lastChanceQuiz = localStorage.getItem('generatedQuiz');
+    if (lastChanceQuiz) {
+      try {
+        const parsedQuiz = JSON.parse(lastChanceQuiz);
+        console.log("Found quiz in localStorage during render, loading now");
+        setTimeout(() => loadQuiz(parsedQuiz), 0);
+      } catch (e) {
+        console.error("Error parsing quiz from localStorage in render:", e);
+      }
+    }
+    
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
+        <h2 className="text-2xl font-bold mb-4">Loading Quiz...</h2>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-gray-600 text-center">If the quiz doesn't load within a few seconds, please <Button 
+          variant="link" 
+          className="p-0 h-auto font-semibold"
+          onClick={() => navigate('/generate-quiz')}
+        >click here</Button> to generate a new quiz.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
       {isQuizCompleted ? (

@@ -136,14 +136,15 @@ const GenerateQuiz = () => {
           setTimeout(() => {
             console.log('Navigating to /quiz...');
             
-            // Check if the current route might already be /quiz (which could cause issues)
             console.log('Current location:', location);
             
-            // Navigate to the quiz page, always using wouter navigate
-            navigate("/quiz");
+            // Use direct window location navigation for more reliable page transition
+            console.log('Navigating to quiz page using window.location.href');
             
-            // Log for debugging
-            console.log('Navigation to /quiz requested');
+            // This is a more forceful navigation approach
+            window.location.href = window.location.origin + '/quiz';
+            
+            console.log('Navigation requested via window.location');
           }, 100);
         } catch (err) {
           console.error('Error during post-generation process:', err);
