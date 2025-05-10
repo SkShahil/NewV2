@@ -204,10 +204,8 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
       }
     });
     
-    // Automatically move to next question if not the last one
-    if (currentQuestion < currentQuiz.questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    }
+    // Don't automatically move to next question - let the UI handle navigation
+    // This was causing the selection bug because it would immediately advance to next question
   }, [currentQuiz, currentQuestion]);
   
   // Complete the quiz and save results
