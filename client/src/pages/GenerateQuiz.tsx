@@ -135,13 +135,13 @@ const GenerateQuiz = () => {
             console.log('Navigating to /quiz...');
             
             // Check if the current route might already be /quiz (which could cause issues)
-            if (location[0] === '/quiz') {
-              console.log('Already at /quiz, forcing reload');
-              window.location.reload();
-            } else {
-              // Navigate to the quiz page
-              navigate("/quiz");
-            }
+            console.log('Current location:', location);
+            
+            // Navigate to the quiz page, always using wouter navigate
+            navigate("/quiz");
+            
+            // Log for debugging
+            console.log('Navigation to /quiz requested');
           }, 100);
         } catch (err) {
           console.error('Error during post-generation process:', err);

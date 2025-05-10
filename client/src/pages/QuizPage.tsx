@@ -103,13 +103,16 @@ const QuizPage = () => {
           
           // Transform the quiz to match our expected format
           if (typeof fetchedQuiz === 'object' && fetchedQuiz !== null) {
+            // Treat fetchedQuiz as a dynamic object
+            const fetchedQuizObj = fetchedQuiz as Record<string, any>;
+            
             const quizData: QuizData = {
-              id: fetchedQuiz.id,
-              title: fetchedQuiz.title || 'Untitled Quiz',
-              topic: fetchedQuiz.topic || 'General Knowledge',
-              quizType: (fetchedQuiz.quizType as 'multiple-choice' | 'true-false' | 'short-answer') || 'multiple-choice',
-              questions: Array.isArray(fetchedQuiz.questions) ? fetchedQuiz.questions as Question[] : [],
-              timeLimit: typeof fetchedQuiz.timeLimit === 'number' ? fetchedQuiz.timeLimit : undefined,
+              id: fetchedQuizObj.id,
+              title: fetchedQuizObj.title || 'Untitled Quiz',
+              topic: fetchedQuizObj.topic || 'General Knowledge',
+              quizType: (fetchedQuizObj.quizType as 'multiple-choice' | 'true-false' | 'short-answer' | 'auto') || 'multiple-choice',
+              questions: Array.isArray(fetchedQuizObj.questions) ? fetchedQuizObj.questions as Question[] : [],
+              timeLimit: typeof fetchedQuizObj.timeLimit === 'number' ? fetchedQuizObj.timeLimit : undefined,
             };
             
             loadQuiz(quizData);
