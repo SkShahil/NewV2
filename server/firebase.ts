@@ -38,56 +38,8 @@ try {
 // Make sure app is always defined to avoid TypeScript errors
 const firebaseApp = app as any;
 
-// Export Firebase Auth services (using mock for now as per original file, assuming this will be replaced later if needed)
-export const auth = {
-  verifyIdToken: async (token: string) => {
-    try {
-      // Just return a valid user ID token for any auth request
-      console.log('Auth verification called with token length:', token.length);
-      // Extract and use the user ID from the token if possible
-      let uid = 'anonymous-user';
-      try {
-        // Try to decode token (JWT format) to extract user info
-        if (token && token.includes('.')) {
-          const tokenParts = token.split('.');
-          if (tokenParts.length === 3) {
-            const payload = JSON.parse(atob(tokenParts[1]));
-            if (payload.user_id || payload.sub) {
-              uid = payload.user_id || payload.sub;
-              console.log('Extracted user ID from token:', uid);
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('Error extracting user ID from token:', e);
-      }
-      
-      return { uid };
-    } catch (error) {
-      console.error('Auth verification error:', error);
-      return { uid: 'anonymous-user' };
-    }
-  },
-  getUser: async (uid: string) => {
-    try {
-      console.log('Auth getUser called for uid:', uid);
-      return { uid, displayName: uid.split('-')[0], email: `${uid}@example.com` };
-    } catch (error) {
-      console.error('Get user error:', error);
-      return { uid, displayName: 'Anonymous User', email: 'anonymous@example.com' };
-    }
-  },
-  createUser: async (email: string, password: string, displayName?: string) => {
-    try {
-      console.log('Auth createUser called for email:', email);
-      const uid = 'user-' + Math.random().toString(36).substring(2, 9);
-      return { uid, email, displayName: displayName || email.split('@')[0] };
-    } catch (error) {
-      console.error('Create user error:', error);
-      throw error;
-    }
-  }
-};
+// Initialize and export Firebase Auth
+export const auth = getAuth(firebaseApp);
 
 // Initialize and export Firestore
 export const db = getFirestore(firebaseApp);
@@ -99,7 +51,7 @@ export const serverTimestamp = FieldValue.serverTimestamp;
  */
 export async function verifyIdToken(idToken: string) {
   try {
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await getAuth(firebaseApp).verifyIdToken(idToken);
     return decodedToken;
   } catch (error) {
     console.error('Error verifying Firebase ID token:', error);
@@ -112,7 +64,7 @@ export async function verifyIdToken(idToken: string) {
  */
 export async function getUser(uid: string) {
   try {
-    const userRecord = await auth.getUser(uid);
+    const userRecord = await getAuth(firebaseApp).getUser(uid);
     return userRecord;
   } catch (error) {
     console.error('Error fetching user record:', error);
@@ -125,7 +77,7 @@ export async function getUser(uid: string) {
  */
 export async function createUser(email: string, password: string, displayName?: string) {
   try {
-    const userRecord = await auth.createUser({
+    const userRecord = await getAuth(firebaseApp).createUser({
       email,
       password,
       displayName,
