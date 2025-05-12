@@ -17,6 +17,7 @@ import { getDoc, doc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { generateQuizAttemptPDF, generateAnswerKeyPDF } from '@/lib/pdfGenerator';
+import { safelyConvertFirestoreTimestamp, safelyFormatDate } from '@/lib/utils';
 
 interface QuestionResult {
   questionId: string;
@@ -130,7 +131,7 @@ const Results = () => {
           totalQuestions: attemptData.totalQuestions,
           correctAnswers: attemptData.correctAnswers,
           timeTaken: attemptData.timeTaken,
-          completedAt: new Date(attemptData.completedAt.toDate()),
+          completedAt: safelyConvertFirestoreTimestamp(attemptData.completedAt),
           questions: questionResults,
         });
       } catch (error) {
@@ -263,7 +264,7 @@ const Results = () => {
       # ${results.quizTitle} - Quiz Results
       
       Score: ${results.score}% (${results.correctAnswers}/${results.totalQuestions})
-      Completed: ${results.completedAt.toLocaleString()}
+      Completed: ${safelyFormatDate(results.completedAt, 'datetime')}
       ${results.timeTaken ? `Time taken: ${Math.floor(results.timeTaken / 60)}m ${results.timeTaken % 60}s` : ''}
       
       ## Questions and Answers

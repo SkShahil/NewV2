@@ -6,6 +6,8 @@ import { formatTime } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { checkShortAnswer } from '@/lib/gemini';
+import { useSettings } from '@/context/SettingsContext';
+import { VolumeX, Volume2 } from 'lucide-react';
 
 interface QuizPlayerProps {
   quiz: {
@@ -15,17 +17,19 @@ interface QuizPlayerProps {
     quizType: 'multiple-choice' | 'true-false' | 'short-answer' | 'auto';
   };
   currentQuestion: number;
-  onAnswer: (answer: string | string[]) => void;
+  onAnswer: (questionIndex: number, answer: string | string[]) => void;
   onPrevious: () => void;
   onNext: () => void;
+  onJumpToQuestion: (index: number) => void;
   onComplete: () => void;
   userAnswers: Array<{
     questionId: string;
     userAnswer: string | string[];
-    isCorrect: boolean;
+    isCorrect?: boolean;
   }>;
   timeLeft: number | null;
   textToSpeech?: boolean;
+  isCompleted: boolean;
 }
 
 const QuizPlayer: React.FC<QuizPlayerProps> = ({
@@ -34,11 +38,15 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
   onAnswer,
   onPrevious,
   onNext,
+  onJumpToQuestion,
   onComplete,
   userAnswers,
   timeLeft,
-  textToSpeech = false,
+  textToSpeech: propTextToSpeech,
+  isCompleted,
 }) => {
+  const { textToSpeech: globalTTS } = useSettings();
+  const textToSpeech = propTextToSpeech !== undefined ? propTextToSpeech : globalTTS;
   const [selectedOption, setSelectedOption] = useState<string | string[]>("");
   const [inputValue, setInputValue] = useState("");
   const [isChecking, setIsChecking] = useState(false);
@@ -47,69 +55,66 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   
   const question = quiz.questions[currentQuestion];
-  const currentAnswer = userAnswers.find(a => a.questionId === question.id);
+  const currentAnswerEntry = userAnswers.find(a => a.questionId === question.id);
   const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
   
-  // Speech synthesis
   const synth = window.speechSynthesis;
-  
+
+  const isFirstQuestion = currentQuestion === 0;
+  const isLastQuestion = currentQuestion === quiz.questions.length - 1;
+
   useEffect(() => {
-    // Reset selected option when the question changes
-    if (currentAnswer) {
-      setSelectedOption(currentAnswer.userAnswer);
-      setInputValue(Array.isArray(currentAnswer.userAnswer) 
-        ? currentAnswer.userAnswer.join(", ") 
-        : currentAnswer.userAnswer);
+    const answerEntry = userAnswers.find(a => a.questionId === question.id);
+
+    if (answerEntry) {
+      setSelectedOption(answerEntry.userAnswer);
+      if (question.type === 'short-answer' || quiz.quizType === 'short-answer') {
+        setInputValue(Array.isArray(answerEntry.userAnswer) 
+          ? answerEntry.userAnswer.join(", ") 
+          : String(answerEntry.userAnswer));
+      }
     } else {
-      setSelectedOption("");
-      setInputValue("");
+      setSelectedOption(""); 
+      if (question.type === 'short-answer' || quiz.quizType === 'short-answer') {
+        setInputValue("");
+      }
     }
     
-    // Focus on input field for short answer questions
-    if (quiz.quizType === 'short-answer' && answerInputRef.current) {
+    if ((question.type === 'short-answer' || quiz.quizType === 'short-answer') && answerInputRef.current) {
       answerInputRef.current.focus();
     }
     
-    // Stop any ongoing speech when question changes
     if (synth.speaking) {
       synth.cancel();
       setIsSpeaking(false);
     }
-  }, [currentQuestion, question, currentAnswer]);
-  
-  // Clean up speech synthesis when component unmounts
+  }, [currentQuestion, question.id, userAnswers, question.type, quiz.quizType, synth]);
+
   useEffect(() => {
     return () => {
       if (synth.speaking) {
         synth.cancel();
       }
     };
-  }, []);
+  }, [synth]);
   
   const handleOptionSelect = (option: string) => {
-    console.log('QuizPlayer - Option selected:', option);
     setSelectedOption(option);
-    
-    // Immediately submit answer to context - this is critical for remembering selections!
-    onAnswer(option);
-    
-    // Don't auto-navigate - let user click Next to proceed
+    onAnswer(currentQuestion, option);
+  };
+
+  const handleShortAnswerChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    onAnswer(currentQuestion, newValue);
   };
   
-  const handleShortAnswerSubmit = async () => {
+  const handleShortAnswerSubmitValidation = async () => {
     if (!inputValue.trim()) {
-      toast({
-        title: "Answer Required",
-        description: "Please enter your answer before proceeding",
-        variant: "destructive",
-      });
-      return;
+      return; 
     }
-    
     setIsChecking(true);
-    
     try {
-      // For short answer, we need to check if the answer is correct
       const result = await checkShortAnswer(
         inputValue,
         Array.isArray(question.correctAnswer) 
@@ -117,76 +122,38 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
           : question.correctAnswer.toString(),
         question.question
       );
-      
-      onAnswer(inputValue);
-      
-      // Show feedback for short answer
       toast({
         title: result.isCorrect ? "Correct!" : "Incorrect",
         description: result.explanation,
         variant: result.isCorrect ? "default" : "destructive",
       });
-      
-      // Move to next question if not the last one
-      if (currentQuestion < quiz.questions.length - 1) {
-        setTimeout(() => onNext(), 1500);
-      }
     } catch (error) {
       console.error("Error checking answer:", error);
-      // If we can't check the answer, just accept it and continue
-      onAnswer(inputValue);
+      toast({ title: "Error", description: "Could not validate answer.", variant: "destructive" });
     } finally {
       setIsChecking(false);
     }
   };
   
   const handleNextClick = () => {
-    if (quiz.quizType === 'short-answer') {
-      handleShortAnswerSubmit();
-    } else {
-      if (!selectedOption) {
-        toast({
-          title: "Selection Required",
-          description: "Please select an answer before proceeding",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // The answer has already been submitted in handleOptionSelect
-      console.log('QuizPlayer - Moving to next question');
-      
-      // Simply advance to the next question
+    if (!isLastQuestion) {
       onNext();
     }
   };
-  
-  const handleCompleteClick = () => {
-    if (quiz.quizType === 'short-answer' && !currentAnswer) {
-      handleShortAnswerSubmit();
-    } else {
-      // For multiple choice, make sure we have an answer first
-      if (!selectedOption && quiz.quizType !== 'short-answer') {
-        toast({
-          title: "Selection Required",
-          description: "Please select an answer before completing",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Submit the final answer before completing
-      if (selectedOption && quiz.quizType !== 'short-answer') {
-        console.log('QuizPlayer - Submitting final answer before completion:', selectedOption);
-        onAnswer(selectedOption);
-      }
-      
-      // Small delay to ensure answer is recorded before completion
-      setTimeout(() => {
-        console.log('QuizPlayer - Completing quiz');
-        onComplete();
-      }, 50);
+
+  const handlePreviousClick = () => {
+    if (!isFirstQuestion) {
+      onPrevious();
     }
+  };
+
+  const handleQuestionJumpClick = (index: number) => {
+    onJumpToQuestion(index);
+  };
+
+  const handleCompleteClick = () => {
+    console.log('QuizPlayer - Completing quiz with current answers:', userAnswers);
+    onComplete();
   };
   
   const toggleTextToSpeech = () => {
@@ -196,7 +163,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
       return;
     }
     
-    // Create utterance for the current question
     const utterance = new SpeechSynthesisUtterance(question.question);
     utterance.rate = 1;
     utterance.pitch = 1;
@@ -210,247 +176,115 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
-      {/* Quiz Header */}
+    <div className="max-w-3xl mx-auto p-4 md:p-6 bg-card text-card-foreground rounded-lg shadow-xl quiz-player-container">
       <div className="mb-6">
-        {/* Progress Indicator */}
-        <div className="flex justify-center mb-3 gap-2">
-          {quiz.questions.map((_, index) => {
-            // Check if this question has been answered
-            const isAnswered = userAnswers.some(a => a.questionId === quiz.questions[index].id);
-            // Check if this is the current question
-            const isCurrent = index === currentQuestion;
-            
-            return (
-              <div 
-                key={index} 
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                  isCurrent 
-                    ? 'bg-blue-500 text-white' // Current question
-                    : isAnswered 
-                      ? 'bg-green-500 text-white' // Answered
-                      : 'bg-orange-400 text-white' // Not answered
-                }`}
-              >
-                {index + 1}
-              </div>
-            );
-          })}
-        </div>
-        
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-xl font-bold font-poppins text-gray-800 dark:text-white">{quiz.title}</h1>
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={toggleTextToSpeech}
-              variant="ghost"
-              size="icon"
-              className={`p-2 rounded-full ${
-                isSpeaking ? 'bg-accent text-white' : 'bg-secondary text-gray-600'
-              } hover:bg-secondary-dark transition-all`}
-              aria-label="Text-to-speech"
-              data-tooltip="Text-to-speech"
-            >
-              {isSpeaking ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 5 6 9H2v6h4l5 4V5Z"></path>
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 5 6 9H2v6h4l5 4V5Z"></path>
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                </svg>
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="p-2 rounded-full bg-secondary text-gray-600 hover:bg-secondary-dark transition-all"
-              aria-label="Accessibility options"
-              data-tooltip="Accessibility options"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Question</span>
-            <span className="ml-2 px-2 py-0.5 bg-primary text-white text-xs font-medium rounded-full">
-              {currentQuestion + 1}/{quiz.questions.length}
-            </span>
-          </div>
+        <div className="flex justify-between items-center mb-2 text-sm">
+          <span className="font-medium text-primary">{quiz.title}</span>
           {timeLeft !== null && (
-            <div className="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 mr-1">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {formatTime(timeLeft)}
-              </span>
-            </div>
+            <Badge variant="outline" className="text-lg">
+              Time Left: {formatTime(timeLeft)}
+            </Badge>
           )}
         </div>
-
-        {/* Progress Bar */}
-        <Progress value={progress} className="w-full h-2 quiz-progress-bar" />
+        <Progress value={progress} className="w-full h-3 quiz-progress-bar" />
       </div>
 
-      {/* Quiz Question */}
-      <div className="mb-8">
-        <h2 className="text-lg font-medium text-gray-800 dark:text-white mb-6">{question.question}</h2>
-        
-        {/* Multiple Choice Options */}
-        {quiz.quizType === 'multiple-choice' && question.options && (
-          <div className="space-y-3">
-            {question.options.map((option, idx) => (
-              <button
-                key={idx}
-                className={`w-full text-left p-4 border ${
-                  selectedOption === option
-                    ? 'border-primary bg-primary bg-opacity-10 dark:bg-opacity-30'
-                    : 'border-gray-200 dark:border-gray-600'
-                } rounded-lg hover:bg-secondary dark:hover:bg-gray-700 transition-all quiz-option`}
-                onClick={() => handleOptionSelect(option)}
-              >
-                <div className="flex items-center">
-                  <span className={`h-5 w-5 rounded-full border-2 ${
-                    selectedOption === option
-                      ? 'border-primary bg-primary text-white flex items-center justify-center'
-                      : 'border-gray-300'
-                  } flex items-center justify-center mr-3`}>
-                    {selectedOption === option && (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    )}
-                  </span>
-                  <span className="text-gray-800 dark:text-white">{option}</span>
-                </div>
-              </button>
-            ))}
-          </div>
+      <div className="mb-6 flex flex-wrap justify-center gap-2">
+        {quiz.questions.map((_, index) => (
+          <Button
+            key={`q-nav-${index}`}
+            variant={index === currentQuestion ? 'default' : 'outline'}
+            size="sm"
+            className={`h-8 w-8 p-0 sm:h-9 sm:w-9 ${userAnswers.find(a => a.questionId === quiz.questions[index].id) ? 'ring-2 ring-green-500 ring-offset-1' : ''}`}
+            onClick={() => handleQuestionJumpClick(index)}
+            aria-label={`Go to question ${index + 1}`}
+          >
+            {index + 1}
+          </Button>
+        ))}
+      </div>
+
+      <div className="mb-8 p-4 border border-border rounded-lg bg-background min-h-[100px]">
+        <div className="flex justify-between items-start">
+          <h2 className="text-xl md:text-2xl font-semibold">
+            Question {currentQuestion + 1} of {quiz.questions.length}
+          </h2>
+          {textToSpeech && (
+            <Button variant="ghost" size="icon" onClick={toggleTextToSpeech} aria-label={isSpeaking ? "Stop speech" : "Read question"}>
+              {isSpeaking ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            </Button>
+          )}
+        </div>
+        <p className="mt-2 text-lg md:text-xl whitespace-pre-wrap">{question.question}</p>
+      </div>
+
+      <div className="space-y-4 mb-8">
+        {(question.type === 'multiple-choice' || (!question.type && quiz.quizType === 'multiple-choice')) && question.options && (
+          question.options.map((option, index) => (
+            <Button
+              key={index}
+              variant={selectedOption === option ? 'default' : 'outline'}
+              className="w-full justify-start text-left h-auto py-3 px-4 whitespace-normal quiz-option"
+              onClick={() => handleOptionSelect(option)}
+            >
+              <span className="text-sm sm:text-base">{String.fromCharCode(65 + index)}. {option}</span>
+            </Button>
+          ))
         )}
-        
-        {/* True/False Options */}
-        {quiz.quizType === 'true-false' && (
-          <div className="space-y-3">
-            {['True', 'False'].map((option) => (
-              <button
-                key={option}
-                className={`w-full text-left p-4 border ${
-                  selectedOption === option
-                    ? 'border-primary bg-primary bg-opacity-10 dark:bg-opacity-30'
-                    : 'border-gray-200 dark:border-gray-600'
-                } rounded-lg hover:bg-secondary dark:hover:bg-gray-700 transition-all quiz-option`}
-                onClick={() => handleOptionSelect(option)}
-              >
-                <div className="flex items-center">
-                  <span className={`h-5 w-5 rounded-full border-2 ${
-                    selectedOption === option
-                      ? 'border-primary bg-primary text-white flex items-center justify-center'
-                      : 'border-gray-300'
-                  } flex items-center justify-center mr-3`}>
-                    {selectedOption === option && (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    )}
-                  </span>
-                  <span className="text-gray-800 dark:text-white">{option}</span>
-                </div>
-              </button>
-            ))}
-          </div>
+        {(question.type === 'true-false' || (!question.type && quiz.quizType === 'true-false')) && (
+          ['True', 'False'].map((option, index) => (
+            <Button
+              key={index}
+              variant={selectedOption === option ? 'default' : 'outline'}
+              className="w-full justify-start text-left h-auto py-3 px-4 whitespace-normal quiz-option"
+              onClick={() => handleOptionSelect(option)}
+            >
+               <span className="text-sm sm:text-base">{option}</span>
+            </Button>
+          ))
         )}
-        
-        {/* Short Answer Input */}
-        {quiz.quizType === 'short-answer' && (
-          <div className="space-y-3">
-            <div className="relative">
-              <input
-                ref={answerInputRef}
-                type="text"
-                className="w-full p-4 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="Type your answer here..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleShortAnswerSubmit();
-                  }
-                }}
-                disabled={isChecking}
-              />
-              {isChecking && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-primary">
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                  </svg>
-                </div>
-              )}
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-300">
-              Press Enter to submit your answer or use the buttons below.
-            </p>
+        {(question.type === 'short-answer' || (!question.type && quiz.quizType === 'short-answer')) && (
+          <div>
+            <textarea
+              ref={answerInputRef as any}
+              value={inputValue}
+              onChange={handleShortAnswerChange}
+              placeholder="Type your answer here..."
+              className="w-full p-2 border border-input rounded-md min-h-[80px] text-base bg-background text-foreground focus:ring-ring focus:ring-1"
+            />
           </div>
         )}
       </div>
 
-      {/* Quiz Controls */}
-      <div className="flex justify-between">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-8 pt-6 border-t border-border">
         <Button
-          onClick={onPrevious}
-          disabled={currentQuestion === 0}
-          variant="outline"
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all"
+          onClick={handlePreviousClick}
+          disabled={isFirstQuestion}
+          variant={isFirstQuestion ? "outline" : "default"}
+          className={`w-full sm:w-auto px-6 py-3 text-base ${isFirstQuestion ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
           Previous
         </Button>
-        
-        {currentQuestion < quiz.questions.length - 1 ? (
-          <Button
-            onClick={handleNextClick}
-            disabled={isChecking}
-            className="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-all"
-          >
-            {isChecking ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin mr-2">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                </svg>
-                Checking...
-              </>
-            ) : (
-              "Next"
-            )}
-          </Button>
-        ) : (
-          <Button
-            onClick={handleCompleteClick}
-            disabled={isChecking}
-            className="px-6 py-2 bg-accent hover:bg-accent-dark text-white rounded-lg transition-all"
-          >
-            {isChecking ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin mr-2">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                </svg>
-                Checking...
-              </>
-            ) : (
-              "Complete Quiz"
-            )}
-          </Button>
-        )}
+        <Button
+          onClick={handleNextClick}
+          disabled={isLastQuestion}
+          variant={isLastQuestion ? "outline" : "default"}
+          className={`w-full sm:w-auto px-6 py-3 text-base ${isLastQuestion ? 'opacity-60 cursor-not-allowed' : ''}`}
+        >
+          Next
+        </Button>
+      </div>
+      
+      <div className="mt-6 text-center">
+        <Button
+          onClick={handleCompleteClick}
+          variant="success"
+          size="lg"
+          className="w-full sm:w-auto px-8 py-3 text-lg"
+          disabled={isCompleted}
+        >
+          {isCompleted ? "Quiz Finished" : "Submit Quiz"}
+        </Button>
       </div>
     </div>
   );

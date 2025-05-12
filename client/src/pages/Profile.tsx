@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { getAuth, updateProfile, signOut, onAuthStateChanged } from 'firebase/auth';
 import { db, getUserAttempts } from '@/lib/firebase';
-import { getInitials } from '@/lib/utils';
+import { getInitials, safelyFormatDate } from '@/lib/utils';
 import { format } from 'date-fns';
 
 const profileFormSchema = z.object({
@@ -409,7 +409,7 @@ const Profile = () => {
                               <h4 className="font-medium text-gray-800">{activity.quizTitle || 'Quiz'}</h4>
                               <p className="text-sm text-gray-500 mt-1">
                                 Score: {activity.correctAnswers}/{activity.totalQuestions} •&nbsp;
-                                {new Date(activity.completedAt.toDate()).toLocaleDateString()}
+                                {safelyFormatDate(activity.completedAt)}
                               </p>
                             </div>
                             <Badge variant={

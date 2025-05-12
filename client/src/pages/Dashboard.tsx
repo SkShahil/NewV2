@@ -9,12 +9,16 @@ import StatsCard from "@/components/dashboard/StatsCard";
 import PopularTopicsCard from "@/components/dashboard/PopularTopicsCard";
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, getUserDocument } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [, navigate] = useLocation();
+  const [challengeInput, setChallengeInput] = useState('');
+  const [accepting, setAccepting] = useState(false);
+  const { toast } = useToast();
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -44,6 +48,39 @@ const Dashboard = () => {
       navigate("/login");
     }
   }, [user, loading, navigate]);
+
+  // Accept Challenge Handler
+  const handleAcceptChallenge = async () => {
+    let token = challengeInput.trim();
+    
+    if (!token) {
+      toast({ title: 'Invalid Link/Token', description: 'Please enter a valid challenge link or token.', variant: 'destructive' });
+      return;
+    }
+
+    // Extract token from full link if needed
+    // Handles full URLs like http://localhost:5173/challenge/accept/TOKEN_HERE
+    // or just the token itself TOKEN_HERE
+    try {
+      const url = new URL(token);
+      const pathParts = url.pathname.split('/');
+      // Prefer the last part if it looks like a token, 
+      // or the second to last if the URL ends with a slash like /accept/TOKEN/
+      token = pathParts.pop() || pathParts.pop() || token; 
+    } catch {
+      // Not a full URL, try to get token after the last slash if any
+      const parts = token.split('/');
+      token = parts.pop() || token;
+    }
+
+    if (!token) {
+      toast({ title: 'Invalid Link/Token', description: 'Could not extract a valid token.', variant: 'destructive' });
+      return;
+    }
+
+    // Navigate to the Challenge Accept page
+    navigate(`/challenge/accept/${token}`);
+  };
 
   if (loading) {
     return (
@@ -146,6 +183,29 @@ const Dashboard = () => {
             </div>
             
             <ChallengeList />
+          </div>
+
+          {/* Accept a Challenge Section */}
+          <div className="bg-white rounded-xl card-shadow p-6 mt-6">
+            <h2 className="text-xl font-semibold font-poppins text-gray-800 mb-4">Accept a Challenge</h2>
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <input
+                type="text"
+                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Paste challenge link or token here..."
+                value={challengeInput}
+                onChange={e => setChallengeInput(e.target.value)}
+                disabled={accepting}
+              />
+              <Button
+                onClick={handleAcceptChallenge}
+                disabled={accepting || !challengeInput.trim()}
+                className="w-full md:w-auto"
+              >
+                {accepting ? 'Checking...' : 'Accept Challenge'}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Paste the link or token you received to take the challenge quiz.</p>
           </div>
         </div>
 

@@ -37,7 +37,19 @@ const Leaderboard = () => {
         }
         
         const data = await response.json();
-        if (data && data.users) {
+        if (data && data.leaderboard) {
+          // Map backend leaderboard to LeaderboardUser[]
+          const mapped = data.leaderboard.map((entry: any, idx: number) => ({
+            id: (entry.id || entry.user || String(idx)),
+            name: entry.user || entry.name || `User ${idx + 1}`,
+            photoURL: entry.photoURL || null,
+            score: entry.points || entry.score || 0,
+            quizzesTaken: entry.quizzes || entry.quizzesTaken || 0,
+            averageScore: entry.avgScore || entry.averageScore || 0,
+            rank: idx + 1,
+          }));
+          setUsers(mapped);
+        } else if (data && data.users) {
           setUsers(data.users);
         } else {
           throw new Error('Invalid response format');

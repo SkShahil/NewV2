@@ -222,7 +222,11 @@ export default function AboutPage() {
             <TrophyIcon className="mr-2 h-5 w-5" />
             Get Started Free
           </Button>
-          <Button size="lg" variant="outline" className="border-white hover:bg-primary/90">
+          <Button 
+            size="lg" 
+            variant="outline" 
+            className="border-white text-white hover:bg-white hover:text-primary dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-primary"
+          >
             Learn More
           </Button>
         </div>

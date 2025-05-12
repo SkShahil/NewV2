@@ -41,7 +41,7 @@ const ChallengeAccept = () => {
       try {
         setLoading(true);
         
-        const challengeData = await getChallengeByToken(token);
+        const challengeData: any = await getChallengeByToken(token);
         
         if (!challengeData) {
           setError("Challenge not found or has expired");
@@ -50,15 +50,12 @@ const ChallengeAccept = () => {
         
         setChallenge(challengeData);
         
-        // Fetch the quiz details
-        const quizData = await getQuizById(challengeData.quizId);
-        
-        if (!quizData) {
+        // Use the quiz from the challenge object
+        if (!challengeData.quiz) {
           setError("Quiz not found");
           return;
         }
-        
-        setQuiz(quizData);
+        setQuiz(challengeData.quiz);
       } catch (error) {
         console.error("Error fetching challenge:", error);
         setError("Failed to load the challenge");
@@ -76,7 +73,7 @@ const ChallengeAccept = () => {
         title: "Login Required",
         description: "Please log in to accept this challenge",
       });
-      navigate(`/login?redirect=/challenge/${token}`);
+      navigate(`/login?redirect=/challenge/accept/${token}`);
       return;
     }
     
@@ -168,9 +165,20 @@ const ChallengeAccept = () => {
     return null;
   }
 
-  const expiresIn = challenge.expiresAt
-    ? formatDistanceToNow(new Date(challenge.expiresAt.toDate()), { addSuffix: true })
-    : "soon";
+  let expiresInDisplay = "soon";
+  if (challenge.expiresAt) {
+    try {
+      // Check if expiresAt is a Firestore Timestamp-like object (has toDate)
+      // or if it's a string/number that new Date() can parse.
+      const dateToParse = typeof challenge.expiresAt.toDate === 'function' 
+        ? challenge.expiresAt.toDate() 
+        : challenge.expiresAt;
+      expiresInDisplay = formatDistanceToNow(new Date(dateToParse), { addSuffix: true });
+    } catch (e) {
+      console.error("Error formatting expiresAt:", e, challenge.expiresAt);
+      expiresInDisplay = "Error calculating expiry"; // Or some other fallback
+    }
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
@@ -214,7 +222,7 @@ const ChallengeAccept = () => {
             
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Challenge expires {expiresIn}
+                Challenge expires {expiresInDisplay}
               </div>
               <Badge variant={
                 challenge.status === "pending" ? "pending" : 

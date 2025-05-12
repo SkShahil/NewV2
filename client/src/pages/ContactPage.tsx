@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { MailIcon, PhoneIcon, MapPinIcon, MessageSquareIcon, CheckIcon } from "lucide-react";
+import { MailIcon, PhoneIcon, MapPinIcon, MessageSquareIcon, CheckIcon, GithubIcon } from "lucide-react";
 import { useState } from "react";
 
 export default function ContactPage() {
@@ -155,6 +155,44 @@ export default function ContactPage() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Sunday:</span>
                 <span className="font-medium">Closed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Meet Our Developers Section */}
+      <div className="mb-16">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-10 text-center">Meet Our Developers</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Sk Shahil Akhtar Card */}
+          <div className="bg-card text-card-foreground p-6 rounded-lg shadow-md border border-border">
+            <h3 className="text-xl font-semibold text-primary mb-1">Sk Shahil Akhtar</h3>
+            <p className="text-sm text-muted-foreground mb-3">Front-end Developer</p>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center">
+                <MailIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                <a href="mailto:skshahilakhtar@gmail.com" className="hover:underline">skshahilakhtar@gmail.com</a>
+              </div>
+              <div className="flex items-center">
+                <GithubIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                <a href="https://github.com/SkShahil" target="_blank" rel="noopener noreferrer" className="hover:underline">github.com/SkShahil</a>
+              </div>
+            </div>
+          </div>
+
+          {/* Sahil Singh Card */}
+          <div className="bg-card text-card-foreground p-6 rounded-lg shadow-md border border-border">
+            <h3 className="text-xl font-semibold text-primary mb-1">Sahil Singh</h3>
+            <p className="text-sm text-muted-foreground mb-3">Back-end Developer</p>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center">
+                <MailIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                <a href="mailto:sahilrajputsingh81@gmail.com" className="hover:underline">sahilrajputsingh81@gmail.com</a>
+              </div>
+              <div className="flex items-center">
+                <GithubIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                <a href="https://github.com/SahilSR81" target="_blank" rel="noopener noreferrer" className="hover:underline">github.com/SahilSR81</a>
               </div>
             </div>
           </div>

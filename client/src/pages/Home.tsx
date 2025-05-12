@@ -142,11 +142,11 @@ const Home = () => {
             Join thousands of users who are already creating quizzes, challenging friends, and expanding their knowledge.
           </p>
           {user ? (
-            <Button asChild size="lg" className="bg-white text-accent hover:bg-opacity-90 px-8 py-6 text-lg">
+            <Button asChild size="lg" className="bg-white text-accent-foreground hover:bg-opacity-90 px-8 py-6 text-lg">
               <Link href="/quiz/generate">Create Your First Quiz</Link>
             </Button>
           ) : (
-            <Button asChild size="lg" className="bg-white text-accent hover:bg-opacity-90 px-8 py-6 text-lg">
+            <Button asChild size="lg" className="bg-white text-accent-foreground hover:bg-opacity-90 px-8 py-6 text-lg">
               <Link href="/signup">Sign Up for Free</Link>
             </Button>
           )}

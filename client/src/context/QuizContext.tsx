@@ -4,6 +4,7 @@ import { createQuiz, createQuizAttempt, auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { nanoid } from 'nanoid';
 
 interface QuizContextType {
   currentQuiz: QuizData | null;
@@ -18,6 +19,7 @@ interface QuizContextType {
   answerQuestion: (answer: string | string[]) => void;
   completeQuiz: () => Promise<string | null>;
   resetQuiz: () => void;
+  setCurrentQuestion: (question: number) => void;
 }
 
 export interface QuizData {
@@ -68,7 +70,7 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
   
   // Load a quiz
   const loadQuiz = useCallback((quiz: QuizData) => {
-    console.log("QuizContext: loadQuiz called with:", quiz);
+    console.log("QuizContext: loadQuiz called with:", JSON.stringify(quiz, null, 2)); // Detailed log of incoming quiz
     
     if (!quiz) {
       console.error("QuizContext: Attempted to load null or undefined quiz");
@@ -85,8 +87,15 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
       timeLimit: typeof quiz.timeLimit === 'number' ? quiz.timeLimit : 10,
     };
     
+    // Log the state of questions before the check
+    console.log("QuizContext: Parsed quiz.questions type:", typeof quiz.questions, "Is it an array?", Array.isArray(quiz.questions));
+    if (Array.isArray(quiz.questions)) {
+      console.log("QuizContext: Parsed quiz.questions length:", quiz.questions.length);
+    }
+    console.log("QuizContext: safeQuiz.questions before check:", JSON.stringify(safeQuiz.questions, null, 2));
+
     if (!safeQuiz.questions.length) {
-      console.error("QuizContext: Quiz has no questions or invalid questions array:", quiz.questions);
+      console.error("QuizContext: Quiz has no questions or invalid questions array. Original quiz.questions:", quiz.questions, "Processed safeQuiz.questions:", safeQuiz.questions);
       toast({
         title: 'Error Loading Quiz',
         description: 'The quiz appears to be invalid or contains no questions.',
@@ -229,31 +238,60 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
       let quizId = currentQuiz.id;
       
       if (!quizId) {
-        const savedQuiz = await createQuiz(user.uid, {
-          title: currentQuiz.title,
-          topic: currentQuiz.topic,
-          quizType: currentQuiz.quizType,
-          questions: currentQuiz.questions,
-          isPublic: true
-        });
+        console.log("QuizContext - Creating new quiz in Firestore");
+        
+        // Ensure no undefined values in questions
+        const sanitizedQuestions = currentQuiz.questions.map(q => ({
+          id: q.id || nanoid(10), // Ensure each question has an ID
+          question: q.question || "",
+          options: Array.isArray(q.options) ? q.options : [],
+          correctAnswer: q.correctAnswer || "",
+          explanation: q.explanation || ""
+        }));
+        
+        // Constructing data for Firebase
+        const quizDataForFirebase = {
+          userId: user.uid,
+          title: currentQuiz.title || "Untitled Quiz",
+          category: currentQuiz.topic || "General Knowledge",
+          description: `Quiz on ${currentQuiz.topic || "General Knowledge"}`,
+          quizType: currentQuiz.quizType || "multiple-choice",
+          questions: sanitizedQuestions,
+          // Add any other required fields with safe defaults
+        };
+
+        console.log("QuizContext - Quiz data being saved:", JSON.stringify(quizDataForFirebase));
+        const savedQuiz = await createQuiz(user.uid, quizDataForFirebase);
         quizId = savedQuiz.id;
+        console.log("QuizContext - Quiz saved with ID:", quizId);
       }
+      
+      // Ensure no undefined values in answers
+      const sanitizedAnswers = userAnswers.map(a => ({
+        questionId: a.questionId,
+        userAnswer: a.userAnswer || "",
+        isCorrect: !!a.isCorrect
+      }));
       
       // Save quiz attempt
       const attemptData = {
         userId: user.uid,
-        quizId,
+        quizId: quizId,
+        quizTitle: currentQuiz.title || "Untitled Quiz",
+        quizCategory: currentQuiz.topic || "General Knowledge",
         score,
         totalQuestions: currentQuiz.questions.length,
         correctAnswers,
-        answers: userAnswers,
-        completedAt: new Date().toISOString(),
+        answers: sanitizedAnswers,
+        completedAt: new Date(),
         timeTaken: currentQuiz.timeLimit 
           ? (currentQuiz.timeLimit * 60) - (timeLeft || 0) 
-          : null
+          : 0
       };
       
+      console.log("QuizContext - Attempt data being saved:", JSON.stringify(attemptData));
       const attempt = await createQuizAttempt(attemptData);
+      console.log("QuizContext - Quiz attempt saved with ID:", attempt.id);
       
       toast({
         title: "Quiz Completed!",
@@ -307,7 +345,8 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
     previousQuestion,
     answerQuestion,
     completeQuiz,
-    resetQuiz
+    resetQuiz,
+    setCurrentQuestion,
   };
   
   return <QuizContext.Provider value={value}>{children}</QuizContext.Provider>;

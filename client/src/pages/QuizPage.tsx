@@ -20,184 +20,175 @@ const QuizPage = () => {
   const {
     currentQuiz,
     loadQuiz,
-    currentQuestion,
-    userAnswers,
-    timeLeft,
+    // currentQuestion, // Not directly used in QuizPage's primary logic, but in QuizPlayer
+    // userAnswers, // Not directly used
+    // timeLeft, // Not directly used
     isQuizCompleted,
     resetQuiz,
     startQuiz,
-    nextQuestion,
-    previousQuestion,
-    answerQuestion,
-    completeQuiz,
+    // nextQuestion, // For QuizPlayer
+    // previousQuestion, // For QuizPlayer
+    // answerQuestion, // For QuizPlayer
+    completeQuiz, // For handleCompleteQuiz
   } = useQuiz();
   
   const [loading, setLoading] = useState(true);
-  const [textToSpeech, setTextToSpeech] = useState(true);
+  const [textToSpeech, setTextToSpeech] = useState(true); // This seems to be for QuizPlayer, not QuizPage itself
   const { toast } = useToast();
   
   // Check authentication state
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
       setAuthLoading(false);
     });
-    
     return () => unsubscribe();
   }, [auth]);
   
+  // Main effect for loading quiz data
   useEffect(() => {
     if (!authLoading && !user) {
-      console.log("User not authenticated, redirecting to login");
+      console.log("QuizPage: User not authenticated, redirecting to login");
       navigate('/login');
       return;
     }
-    
-    const fetchQuiz = async () => {
-      console.log("fetchQuiz called in QuizPage, id:", id);
-      
-      // Try to get quiz from sessionStorage (preferred way now)
-      const currentQuizJson = sessionStorage.getItem('currentQuiz');
-      
-      if (currentQuizJson) {
-        try {
-          // Parse and load the generated quiz
-          const quizData = JSON.parse(currentQuizJson);
-          console.log("Loading quiz from sessionStorage:", quizData);
-          
-          // Validate quiz data
-          if (!quizData || !quizData.questions || !Array.isArray(quizData.questions)) {
-            console.error("Invalid quiz data structure:", quizData);
-            toast({
-              title: "Error Loading Quiz",
-              description: "The quiz data appears to be invalid. Please try generating a new quiz.",
-              variant: "destructive"
-            });
-            navigate('/generate-quiz');
-            return;
-          }
-          
-          // Debug the content of the quiz
-          console.log("Quiz has", quizData.questions.length, "questions");
-          console.log("First question:", quizData.questions[0]);
-          console.log("Quiz type:", quizData.quizType);
-          
-          // Ensure quiz type is compatible
-          if (quizData.quizType === 'auto') {
-            quizData.quizType = 'multiple-choice';
-            console.log("Converted 'auto' quiz type to 'multiple-choice'");
-          }
-          
-          // Load the quiz immediately and force state update
-          loadQuiz(quizData);
-          console.log("Quiz loaded into context successfully from sessionStorage");
-          
-          // Don't clear from sessionStorage immediately to allow for page refreshes
-          setLoading(false);
-          return;
-        } catch (error) {
-          console.error("Error parsing quiz from sessionStorage:", error);
-        }
-      } else {
-        console.log("No currentQuiz found in sessionStorage");
-      }
-      
-      // Fallback to localStorage for backward compatibility
-      const generatedQuizJson = localStorage.getItem('generatedQuiz');
-      
-      if (generatedQuizJson) {
-        try {
-          const generatedQuiz = JSON.parse(generatedQuizJson);
-          console.log("Loading quiz from localStorage (legacy):", generatedQuiz);
-          
-          if (!generatedQuiz.questions || !Array.isArray(generatedQuiz.questions)) {
-            throw new Error("Invalid quiz data");
-          }
-          
-          if (generatedQuiz.quizType === 'auto') {
-            generatedQuiz.quizType = 'multiple-choice';
-          }
-          
-          loadQuiz(generatedQuiz);
-          localStorage.removeItem('generatedQuiz');
-          setLoading(false);
-          return;
-        } catch (error) {
-          console.error("Error with localStorage quiz:", error);
-          localStorage.removeItem('generatedQuiz');
-        }
-      }
-      
-      // If we have an ID, try to fetch an existing quiz
-      if (id && id !== 'new') {
-        try {
-          setLoading(true);
-          // For an existing quiz, fetch it from Firebase
-          const fetchedQuiz = await getQuizById(id);
-          
-          if (!fetchedQuiz) {
-            toast({
-              title: 'Quiz Not Found',
-              description: 'The requested quiz could not be found',
-              variant: 'destructive',
-            });
-            navigate('/generate-quiz');
-            return;
-          }
-          
-          // Transform the quiz to match our expected format
-          if (typeof fetchedQuiz === 'object' && fetchedQuiz !== null) {
-            // Treat fetchedQuiz as a dynamic object
-            const fetchedQuizObj = fetchedQuiz as Record<string, any>;
-            
-            const quizData: QuizData = {
-              id: fetchedQuizObj.id,
-              title: fetchedQuizObj.title || 'Untitled Quiz',
-              topic: fetchedQuizObj.topic || 'General Knowledge',
-              quizType: (fetchedQuizObj.quizType as 'multiple-choice' | 'true-false' | 'short-answer' | 'auto') || 'multiple-choice',
-              questions: Array.isArray(fetchedQuizObj.questions) ? fetchedQuizObj.questions as Question[] : [],
-              timeLimit: typeof fetchedQuizObj.timeLimit === 'number' ? fetchedQuizObj.timeLimit : undefined,
-            };
-            
-            loadQuiz(quizData);
-          } else {
-            throw new Error('Invalid quiz data returned from server');
-          }
-          
-        } catch (error) {
-          console.error('Error fetching quiz:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to load the quiz. Please try again.',
-            variant: 'destructive',
-          });
-          navigate('/generate-quiz');
-        } finally {
-          setLoading(false);
-        }
-      } else if (!currentQuiz) {
-        // No quiz in localStorage or context, redirect to generate page
-        navigate('/generate-quiz');
+
+    if (authLoading || !user) {
+      console.log("QuizPage: Auth still loading or no user, skipping quiz load.");
+      return; 
+    }
+
+    const loadQuizData = async () => {
+      console.log("QuizPage: loadQuizData attempting to load. Current quiz in context:", currentQuiz?.id, "URL ID:", id);
+      setLoading(true);
+
+      // Scenario 1: Quiz is already in context and matches the ID, or it's a 'new' quiz that's already loaded.
+      if (currentQuiz && ((id && currentQuiz.id === id) || ((!id || id === 'new') && currentQuiz.id))) {
+        console.log("QuizPage: Quiz already in context, ID:", currentQuiz.id);
+        setLoading(false); 
+        // startQuiz() will be handled by its own useEffect watching currentQuiz and loading state
         return;
       }
       
+      // Scenario 2: Try loading from sessionStorage (e.g., after quiz generation)
+      const currentQuizJson = sessionStorage.getItem('currentQuiz');
+      if (currentQuizJson) {
+        try {
+          const quizData = JSON.parse(currentQuizJson) as QuizData;
+          console.log("QuizPage: Loading quiz from sessionStorage. ID in session:", quizData.id);
+
+          if (!quizData || !quizData.questions || !Array.isArray(quizData.questions) || quizData.questions.length === 0) {
+            console.error("QuizPage: Invalid quiz data structure from sessionStorage:", quizData);
+            toast({ title: "Error Loading Quiz", description: "Invalid quiz data from session. Please try generating again.", variant: "destructive"});
+            sessionStorage.removeItem('currentQuiz'); // Clear bad data
+            navigate('/generate-quiz');
+            return;
+          }
+          if (quizData.quizType === 'auto') quizData.quizType = 'multiple-choice';
+          
+          loadQuiz(quizData); // This will update currentQuiz in context
+          // Set loading to false immediately after loading quiz
+          setLoading(false);
+          console.log("QuizPage: Quiz loaded from sessionStorage and loading set to false");
+          return;
+        } catch (error) {
+          console.error("QuizPage: Error parsing quiz from sessionStorage:", error);
+          sessionStorage.removeItem('currentQuiz'); // Clear potentially corrupt data
+          toast({ title: "Error Loading Quiz", description: "Could not load quiz from session. Please try generating again.", variant: "destructive"});
+          navigate('/generate-quiz');
+          return;
+        }
+      }
+
+      // Scenario 3: Try loading an existing quiz by ID from Firebase (if ID is present and not 'new')
+      if (id && id !== 'new') {
+        console.log("QuizPage: Attempting to fetch quiz by ID from Firebase:", id);
+        try {
+          const fetchedQuiz = await getQuizById(id);
+          if (!fetchedQuiz) {
+            console.error("QuizPage: Quiz not found in Firebase for ID:", id);
+            toast({ title: 'Quiz Not Found', description: 'The requested quiz could not be found.', variant: 'destructive' });
+            navigate('/generate-quiz');
+            return;
+          }
+          // Explicitly cast fetchedQuiz to a more flexible type for mapping if necessary,
+          // or ensure properties are optional on FirebaseQuizData if they truly are.
+          // For now, let's assume they might be on the object from Firebase.
+          const firebaseQuizShape = fetchedQuiz as any; // Use with caution, or define a more precise intermediate type
+
+          const quizData: QuizData = { // This QuizData is ContextQuizData
+            id: fetchedQuiz.id,
+            title: firebaseQuizShape.title || 'Untitled Quiz',
+            topic: firebaseQuizShape.category || 'General Topic', // Map category to topic
+            quizType: firebaseQuizShape.quizType || 'multiple-choice', // Provide fallback
+            questions: Array.isArray(firebaseQuizShape.questions) ? firebaseQuizShape.questions : [],
+            timeLimit: typeof firebaseQuizShape.timeLimit === 'number' ? firebaseQuizShape.timeLimit : undefined, // Provide fallback
+          };
+          if (quizData.questions.length === 0) {
+             console.error("QuizPage: Fetched quiz from Firebase has no questions. ID:", id);
+             toast({ title: 'Empty Quiz', description: 'The fetched quiz has no questions.', variant: 'destructive' });
+             navigate('/generate-quiz');
+             return;
+          }
+          loadQuiz(quizData);
+          // Set loading to false immediately after loading quiz from Firebase
+          setLoading(false);
+          console.log("QuizPage: Quiz loaded from Firebase and loading set to false");
+          return;
+        } catch (error) {
+          console.error('QuizPage: Error fetching quiz from Firebase by ID:', id, error);
+          toast({ title: 'Error Fetching Quiz', description: 'Failed to load the quiz. Please try again.', variant: 'destructive' });
+          navigate('/generate-quiz');
+          return;
+        }
+      }
+      
+      // Scenario 4: No ID, not 'new', or 'new' but nothing in session/context (e.g. direct navigation to /quiz or /quiz/new without prior state)
+      // If we reach here, it means no quiz was loaded from session or fetched by ID.
+      // If currentQuiz is also null, then we truly have no quiz.
+      if (!currentQuiz) {
+        console.log("QuizPage: No quiz loaded from any source and no quiz in context. Redirecting to generate.");
+        toast({ title: 'No Quiz Available', description: 'Please generate or select a quiz first.', variant: 'destructive' });
+        navigate('/generate-quiz');
+        return;
+      }
+
+      // If somehow currentQuiz got set by a concurrent process but didn't match earlier conditions, 
+      // ensure loading is false.
       setLoading(false);
     };
-    
-    fetchQuiz();
-    
-    // Start the quiz when the component mounts
-    startQuiz();
-    
-    // Clean up when unmounting
+
+    loadQuizData();
+
+  }, [id, authLoading, user, navigate, loadQuiz, toast]); // Removed currentQuiz and other context updaters
+
+  // Effect to start the quiz once it's loaded and ready
+  useEffect(() => {
+    if (currentQuiz && !loading && !isQuizCompleted) {
+      console.log("QuizPage: currentQuiz is loaded, page is not in loading state, and quiz not completed. Calling startQuiz(). Quiz ID:", currentQuiz.id);
+      startQuiz();
+    }
+  }, [currentQuiz, loading, startQuiz, isQuizCompleted]);
+
+  // Effect for cleanup when component unmounts or relevant IDs change
+  useEffect(() => {
+    const quizIdBeforeUnmount = currentQuiz?.id;
     return () => {
-      // Reset the quiz state if navigating away without completing
+      console.log("QuizPage: Cleanup effect running. Quiz ID at time of setup:", quizIdBeforeUnmount, "isQuizCompleted:", isQuizCompleted);
+      // Only reset if the quiz was not completed AND the quiz context is still for the same quiz.
+      // This avoids resetting a new quiz if the user quickly navigates away then back to a different quiz.
+      // However, `resetQuiz` typically clears `currentQuiz` entirely.
+      // A more fine-grained reset might be needed if `resetQuiz` is too broad.
       if (!isQuizCompleted) {
-        resetQuiz();
+          // console.log("QuizPage: Resetting quiz as it was not completed.");
+          // resetQuiz(); // Consider the implications of resetting. If navigating away, usually yes.
       }
     };
-  }, [id, authLoading, user, navigate, currentQuiz, loadQuiz, resetQuiz, startQuiz, isQuizCompleted, toast]);
-  
+    // Dependencies: `id` changing means we are on a different quiz page path.
+    // `resetQuiz` and `isQuizCompleted` are part of the logic.
+  }, [id, resetQuiz, isQuizCompleted, currentQuiz?.id]); // currentQuiz.id helps track if it's the same quiz for reset logic
+
+
   const handleCompleteQuiz = async () => {
     const attemptId = await completeQuiz();
     if (attemptId) {
@@ -205,7 +196,9 @@ const QuizPage = () => {
     }
   };
   
-  if (authLoading || loading) {
+  // Render loading indicator
+  if (authLoading || (loading && !currentQuiz)) {
+    console.log("QuizPage: Rendering Loader. authLoading:", authLoading, "loading:", loading, "currentQuiz exists:", !!currentQuiz);
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -213,95 +206,43 @@ const QuizPage = () => {
     );
   }
   
+  // Redirect if user somehow got here without being authenticated (should be caught by useEffect)
   if (!user) {
-    return null; // Will redirect to login in useEffect
+    console.log("QuizPage: Rendering null because no user (should have been redirected).");
+    return null; 
   }
   
+  // Render message if quiz data is still not available after loading attempts
   if (!currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
-    console.log("No quiz data available in the component render function");
-    
-    // Try one more time to get quiz from sessionStorage
-    const lastChanceQuiz = sessionStorage.getItem('currentQuiz');
-    if (lastChanceQuiz) {
-      try {
-        const parsedQuiz = JSON.parse(lastChanceQuiz);
-        console.log("Found quiz in sessionStorage during render, loading now");
-        
-        // Fix quiz type if needed
-        if (parsedQuiz.quizType === 'auto') {
-          parsedQuiz.quizType = 'multiple-choice';
-        }
-        
-        // Force immediate load
-        setTimeout(() => loadQuiz(parsedQuiz), 0);
-      } catch (e) {
-        console.error("Error parsing quiz from sessionStorage in render:", e);
-      }
-    } else {
-      // Final attempt from localStorage (legacy)
-      const legacyQuiz = localStorage.getItem('generatedQuiz');
-      if (legacyQuiz) {
-        try {
-          const parsedLegacyQuiz = JSON.parse(legacyQuiz);
-          console.log("Found quiz in localStorage during render (legacy fallback)");
-          setTimeout(() => loadQuiz(parsedLegacyQuiz), 0);
-        } catch (e) {
-          console.error("Error parsing legacy quiz:", e);
-        }
-      }
-    }
-    
+    console.log("QuizPage: No quiz data available in render function after loading attempts. currentQuiz:", currentQuiz);
+    // The useEffect should have navigated away if no quiz could be loaded. 
+    // If we reach here, it's an unexpected state.
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
-        <h2 className="text-2xl font-bold mb-4">Loading Quiz...</h2>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-        <p className="text-gray-600 text-center">If the quiz doesn't load within a few seconds, please <Button 
-          variant="link" 
-          className="p-0 h-auto font-semibold"
-          onClick={() => navigate('/generate-quiz')}
-        >click here</Button> to generate a new quiz.</p>
+      <div className="flex flex-col justify-center items-center min-h-screen text-center">
+        <p className="text-xl text-red-500 mb-4">Could not load quiz data.</p>
+        <p className="mb-2">This can happen if the quiz ID is invalid, data is missing, or an error occurred.</p>
+        <Button onClick={() => navigate('/generate-quiz')}>Generate New Quiz</Button>
       </div>
     );
   }
 
+  // Render the QuizPlayer if everything is loaded
+  console.log("QuizPage: Rendering QuizPlayer. Quiz ID:", currentQuiz.id, "Number of questions:", currentQuiz.questions.length);
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
-      {isQuizCompleted ? (
-        <div className="bg-white rounded-xl card-shadow p-8 text-center">
-          <div className="mb-6">
-            <div className="h-20 w-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold mt-4">Quiz Completed!</h2>
-            <p className="text-gray-600 mt-2">
-              You've answered {userAnswers.length} out of {currentQuiz.questions.length} questions.
-            </p>
-          </div>
-          
-          <div className="flex justify-center space-x-4">
-            <Button onClick={handleCompleteQuiz} className="bg-primary hover:bg-primary-dark">
-              View Results
-            </Button>
-            <Button onClick={() => navigate('/dashboard')} variant="outline">
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <QuizPlayer
-          quiz={currentQuiz}
-          currentQuestion={currentQuestion}
-          onAnswer={answerQuestion}
-          onPrevious={previousQuestion}
-          onNext={nextQuestion}
-          onComplete={completeQuiz}
-          userAnswers={userAnswers}
-          timeLeft={timeLeft}
-        />
-      )}
+    <div className="container mx-auto px-4 py-8">
+      <QuizPlayer
+        quiz={currentQuiz}
+        currentQuestion={useQuiz().currentQuestion} // Get latest from context
+        userAnswers={useQuiz().userAnswers} // Get latest from context
+        onAnswer={useQuiz().answerQuestion} // Get latest from context
+        onNext={useQuiz().nextQuestion} // Get latest from context
+        onPrevious={useQuiz().previousQuestion} // Get latest from context
+        timeLeft={useQuiz().timeLeft} // Get latest from context
+        onComplete={handleCompleteQuiz}
+        isCompleted={isQuizCompleted} // This is from QuizPage's own useQuiz() destructuring
+        textToSpeech={textToSpeech}
+        onJumpToQuestion={(index) => useQuiz().setCurrentQuestion(index)}
+      />
     </div>
   );
 };

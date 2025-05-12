@@ -4,67 +4,95 @@
 
 @layer base {
   :root {
-    /* India flag-inspired color scheme */
-    --background: 0 0% 100%; /* White */
-    --foreground: 20 14.3% 4.1%;
-    --muted: 60 4.8% 95.9%;
-    --muted-foreground: 25 5.3% 44.7%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 20 14.3% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
-    --primary: 27 100% 50%; /* #FF8C00 (Deep Saffron - Orange) */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 100%; /* #FFFFFF (White) */
-    --secondary-foreground: 20 14.3% 4.1%;
-    --accent: 116 65% 36%; /* #138808 (India Green) */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --tertiary: 211 100% 50%; /* #0000FF (Navy Blue - Ashoka Chakra) */
-    --ring: 27 100% 50%;
+    /* Light Mode Theme */
+    --background: 285 100% 99%; /* #fdfbff - Off-white */
+    --foreground: 308 89% 11%; /* #31062a - Very dark purple */
+
+    --card: 0 0% 100%; /* #FFFFFF - Pure White */
+    --card-foreground: 308 89% 11%; /* #31062a */
+
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 308 89% 11%; /* #31062a */
+
+    --primary: 308 89% 16%; /* #490b3d - Deep Purple/Maroon */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --secondary: 330 85% 43%; /* #bd1e51 - Strong Pink/Magenta */
+    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --muted: 315 60% 93%; /* #f3e4f1 - Very light muted pink/purple */
+    --muted-foreground: 316 40% 30%; /* #6e2c60 - Darker muted purple */
+
+    --accent: 44 89% 51%; /* #f1b814 - Warm Yellow/Gold */
+    --accent-foreground: 308 89% 11%; /* #31062a - Dark text on yellow */
+
+    --destructive: 0 63% 40%; /* #c53030 - Standard Red */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --border: 318 48% 90%; /* #e9d8e5 - Light muted purple/pink */
+    --input: 318 48% 90%; /* #e9d8e5 */
+    --ring: 330 85% 43%; /* #bd1e51 - Strong Pink/Magenta for rings */
+
     --radius: 0.5rem;
 
-    --chart-1: 27 100% 50%; /* Orange */
-    --chart-2: 0 0% 100%;   /* White */
-    --chart-3: 116 65% 36%; /* Green */
-    --chart-4: 211 100% 50%; /* Blue */
-    --chart-5: 0 84.2% 60.2%;
+    /* Chart colors can be kept or adjusted based on the new theme */
+    --chart-1: 44 89% 51%; /* Yellow from light theme */
+    --chart-2: 330 85% 43%; /* Pink from light theme */
+    --chart-3: 308 89% 16%; /* Maroon from light theme */
+    --chart-4: 308 40% 30%; /* Muted purple from light theme */
+    --chart-5: 0 63% 40%;   /* Red from light theme */
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 100%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    /* Dark Mode Theme based on new user specification */
+    --background: 0 0% 7%; /* #121212 */
+    --foreground: 0 0% 100%; /* #FFFFFF */
+
+    --card: 0 0% 12%; /* #1E1E1E */
+    --card-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --popover: 0 0% 12%; /* #1E1E1E */
+    --popover-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --primary: 260 100% 67%; /* #A259FF - Purple CTA */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --secondary: 0 0% 17%; /* #2C2C2C - Secondary Buttons BG */
+    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --muted: 0 0% 12%; /* #1E1E1E - Using Surface for muted backgrounds */
+    --muted-foreground: 0 0% 69%; /* #B0B0B0 - Secondary Text */
+
+    --accent: 160 100% 70%; /* #64FFDA - Aquamarine Accent */
+    --accent-foreground: 0 0% 7%; /* #121212 - Dark text for Aquamarine BG */
+
+    --destructive: 0 100% 71%; /* #FF6B6B - Error Red */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --border: 0 0% 17%; /* #2C2C2C - Divider/Border */
+    --input: 0 0% 12%; /* #1E1E1E - Surface for input BG */
+    --ring: 160 100% 70%; /* #64FFDA - Aquamarine for rings */
+
+    /* Custom specific colors from the new theme */
+    --success: 122 39% 49%; /* #4CAF50 */
+    --success-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --header-background: 0 0% 10%; /* #1A1A1A */
+    --header-foreground: 0 0% 100%; /* #FFFFFF */
+    --footer-background: 0 0% 10%; /* #1A1A1A */
+    --footer-foreground: 0 0% 100%; /* #FFFFFF */
     
-    /* Improved contrast colors for dark mode - better for colorblind users */
-    --primary: 27 100% 55%; /* Brighter Orange for dark mode */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 25%; /* Slightly lighter secondary for contrast */
-    --secondary-foreground: 0 0% 100%; /* White text on darker background */
-    --accent: 116 65% 45%; /* Brighter Green for dark mode */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 70% 50%; /* Brighter Red for dark mode */
-    --destructive-foreground: 0 0% 100%;
-    --tertiary: 211 100% 60%; /* Brighter Blue for dark mode */
-    --ring: 27 100% 55%;
-    --radius: 0.5rem;
-    
-    /* Chart colors with improved contrast */
-    --chart-1: 27 100% 55%; /* Brighter Orange */
-    --chart-2: 0 0% 85%;    /* Light Gray instead of White */
-    --chart-3: 116 65% 45%; /* Brighter Green */
-    --chart-4: 211 100% 60%; /* Brighter Blue */
-    --chart-5: 0 70% 50%; /* Brighter Red */
+    --button-primary-hover-background: 260 100% 77%; /* #B889FF - Lighter Purple */
+    --button-secondary-hover-background: 0 0% 24%; /* #3D3D3D */
+    --button-disabled-background: 0 0% 23%; /* #3A3A3A */
+    --button-disabled-foreground: 0 0% 47%; /* #777777 */
+
+    /* Chart colors can be updated to fit this new dark theme */
+    --chart-1: 260 100% 67%; /* Purple CTA */
+    --chart-2: 160 100% 70%; /* Aquamarine */
+    --chart-3: 0 0% 69%;     /* Secondary Text color (light gray) */
+    --chart-4: 337 50% 51%; /* Muted Raspberry from previous dark theme (example) */
+    --chart-5: 0 100% 71%;   /* Error Red */
   }
 }
 
@@ -72,18 +100,20 @@
   * {
     @apply border-border;
   }
-
   body {
-    @apply font-sans antialiased bg-secondary text-foreground;
+    @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-poppins;
   }
   
   /* Apply linear gradient backgrounds to specific elements - India flag colors */
   .gradient-primary {
-    @apply bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white;
+    @apply bg-primary text-primary-foreground; /* Fallback to solid if no new gradient desired */
   }
   
   .gradient-secondary {
-    @apply bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white;
+    @apply bg-secondary text-secondary-foreground; /* Fallback to solid if no new gradient desired */
   }
   
   .gradient-accent {
@@ -113,28 +143,32 @@
   
   /* Main app background gradients for light/dark themes - India-inspired */
   .main-bg-light {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
-    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm48 25a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-43-7a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm63 5a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM34 38a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm56-12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-48 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM11 83a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-4-60a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm9 71a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm42 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' fill='rgba(255, 153, 51, 0.1)' fill-rule='evenodd'/%3E%3C/svg%3E");
+    /* background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%); */
+    /* background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm48 25a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-43-7a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm63 5a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM34 38a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm56-12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-48 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM11 83a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-4-60a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm9 71a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm42 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' fill='rgba(255, 153, 51, 0.1)' fill-rule='evenodd'/%3E%3C/svg%3E"); */
   }
   
   .main-bg-dark {
-    background: linear-gradient(135deg, #0a0a0a 0%, #111111 100%);
-    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm48 25a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-43-7a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm63 5a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM34 38a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm56-12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-48 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM11 83a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-4-60a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm9 71a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm42 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' fill='rgba(19, 136, 8, 0.1)' fill-rule='evenodd'/%3E%3C/svg%3E");
+    /* background: linear-gradient(135deg, #0a0a0a 0%, #111111 100%); */
+    /* background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm48 25a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-43-7a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm63 5a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM34 38a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm56-12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-48 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM11 83a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-4-60a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm9 71a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm42 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' fill='rgba(19, 136, 8, 0.1)' fill-rule='evenodd'/%3E%3C/svg%3E"); */
   }
   
   /* Apply appropriate main background based on theme */
   body.light {
-    @apply main-bg-light;
+    /* @apply main-bg-light; */ /* Consider removing if body bg-background is enough */
   }
   
   body.dark {
-    @apply main-bg-dark;
+    /* @apply main-bg-dark; */ /* Consider removing if body bg-background is enough */
   }
 }
 
 /* Custom Styles */
 .card-shadow {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.dark .card-shadow {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Keep or adjust for dark theme */
 }
 
 .transition-all {
@@ -149,6 +183,10 @@
   transition: width 0.5s ease-in-out;
 }
 
+.quiz-progress-bar div {
+  background-color: hsl(var(--primary)) !important;
+}
+
 .tooltip {
   position: relative;
 }
@@ -160,11 +198,12 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 4px 8px;
-  background-color: #333;
-  color: white;
+  background-color: hsl(var(--foreground)); /* Use theme variable */
+  color: hsl(var(--background)); /* Use theme variable */
   border-radius: 4px;
   font-size: 12px;
   white-space: nowrap;
+  z-index: 10; /* Ensure tooltip is on top */
 }
 
 /* Font families */
@@ -178,6 +217,169 @@
 
 /* Accessibility outline for keyboard navigation */
 :focus {
-  outline: 2px solid hsl(var(--primary));
+  outline: 2px solid hsl(var(--ring)); /* Use --ring for focus */
   outline-offset: 2px;
 }
+
+/* Large Text Mode */
+.large-text body {
+  font-size: 115%; /* Increase base font size for body */
+}
+
+.large-text h1, .large-text .text-4xl {
+  font-size: 2.75rem; /* Example: from 2.25rem or text-4xl */
+}
+
+.large-text h2, .large-text .text-3xl {
+  font-size: 2.25rem; /* Example: from 1.875rem or text-3xl */
+}
+
+.large-text h3, .large-text .text-2xl {
+  font-size: 1.875rem; /* Example: from 1.5rem or text-2xl */
+}
+
+.large-text h4, .large-text .text-xl {
+  font-size: 1.5rem; /* Example: from 1.25rem or text-xl */
+}
+
+.large-text p, .large-text div, .large-text span, .large-text li, .large-text label, .large-text .text-base, .large-text .text-md {
+  font-size: 1.125rem; /* Example: from 1rem or text-base */
+}
+
+.large-text .text-sm {
+  font-size: 1rem; /* Example: from 0.875rem */
+}
+
+.large-text .text-xs {
+  font-size: 0.875rem; /* Example: from 0.75rem */
+}
+
+.large-text button,
+.large-text input,
+.large-text textarea,
+.large-text select {
+  font-size: 1.05rem; /* Slightly larger inputs and buttons */
+}
+
+/* High Contrast Mode */
+.high-contrast {
+  --hc-background: #000000;
+  --hc-foreground: #FFFFFF;
+  --hc-foreground-accent: #FFFF00; /* Yellow for key elements/links */
+  --hc-border: #FFFFFF;
+  --hc-border-strong: #FFFF00;
+  --hc-button-background: #000000;
+  --hc-button-foreground: #FFFF00;
+  --hc-button-border: #FFFF00;
+  --hc-input-background: #000000;
+  --hc-input-foreground: #FFFFFF;
+  --hc-input-border: #FFFFFF;
+
+  /* Apply high contrast variables */
+  background-color: var(--hc-background) !important;
+  color: var(--hc-foreground) !important;
+}
+
+.high-contrast body,
+.high-contrast div,
+.high-contrast main,
+.high-contrast header,
+.high-contrast footer,
+.high-contrast nav,
+.high-contrast section,
+.high-contrast article,
+.high-contrast aside {
+  background-color: var(--hc-background) !important;
+  color: var(--hc-foreground) !important;
+  border-color: var(--hc-border) !important;
+}
+
+.high-contrast h1, .high-contrast h2, .high-contrast h3, .high-contrast h4, .high-contrast h5, .high-contrast h6 {
+  color: var(--hc-foreground-accent) !important;
+  border-bottom: 1px solid var(--hc-border);
+  padding-bottom: 0.2em;
+}
+
+.high-contrast p, .high-contrast span, .high-contrast li {
+  color: var(--hc-foreground) !important;
+}
+
+.high-contrast a {
+  color: var(--hc-foreground-accent) !important;
+  text-decoration: underline !important;
+  font-weight: bold;
+}
+
+.high-contrast button, 
+.high-contrast input[type="button"],
+.high-contrast input[type="submit"],
+.high-contrast input[type="reset"] {
+  background-color: var(--hc-button-background) !important;
+  color: var(--hc-button-foreground) !important;
+  border: 2px solid var(--hc-button-border) !important;
+  font-weight: bold;
+  padding: 0.5em 1em;
+}
+
+.high-contrast input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+.high-contrast textarea,
+.high-contrast select {
+  background-color: var(--hc-input-background) !important;
+  color: var(--hc-input-foreground) !important;
+  border: 1px solid var(--hc-input-border) !important;
+  padding: 0.5em;
+}
+
+.high-contrast input:focus,
+.high-contrast textarea:focus,
+.high-contrast select:focus,
+.high-contrast button:focus {
+  outline: 3px solid var(--hc-foreground-accent) !important;
+  outline-offset: 1px;
+}
+
+/* Overriding specific component library styles might be needed */
+.high-contrast .bg-card, .high-contrast [class*="bg-card"] {
+  background-color: var(--hc-background) !important;
+  border: 1px solid var(--hc-border) !important;
+}
+.high-contrast .text-card-foreground, .high-contrast [class*="text-card-foreground"] {
+  color: var(--hc-foreground) !important;
+}
+.high-contrast .border-border, .high-contrast [class*="border-border"] {
+  border-color: var(--hc-border) !important;
+}
+
+.high-contrast .text-primary, .high-contrast [class*="text-primary"] {
+  color: var(--hc-foreground-accent) !important;
+}
+
+.high-contrast .text-muted-foreground, .high-contrast [class*="text-muted-foreground"] {
+ color: var(--hc-foreground) !important;
+  opacity: 0.85;
+}
+
+/* Ensure SVGs used as icons are visible - this might need per-icon adjustment */
+.high-contrast svg {
+  fill: var(--hc-foreground-accent) !important; /* For single-color SVGs */
+  stroke: var(--hc-foreground-accent) !important; /* For outlined SVGs */
+}
+
+/* Further adjustments for cards, popovers, dialogs etc. */
+.high-contrast [role="dialog"], .high-contrast [class*="popover"] {
+    background-color: var(--hc-background) !important;
+    border: 2px solid var(--hc-border-strong) !important;
+    color: var(--hc-foreground) !important;
+}
+
+.high-contrast hr, .high-contrast [class*="separator"] {
+    background-color: var(--hc-border) !important;
+    border-color: var(--hc-border) !important;
+}
+
+/* Make text bolder for better readability if desired */
+/*
+.high-contrast body, .high-contrast p, .high-contrast span, .high-contrast li {
+  font-weight: bold;
+}
+*/

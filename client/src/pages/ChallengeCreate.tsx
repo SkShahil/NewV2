@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +38,8 @@ const ChallengeCreate = () => {
   const [challengeCreated, setChallengeCreated] = useState(false);
   const [challengeLink, setChallengeLink] = useState("");
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [creationError, setCreationError] = useState<string | null>(null);
+  const lastSubmittedData = useRef<FormValues | null>(null);
   const { toast } = useToast();
   const [, navigate] = useLocation();
   
@@ -99,6 +101,9 @@ const ChallengeCreate = () => {
   
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
+    setCreationError(null);
+    // Store the form data for retry purposes
+    lastSubmittedData.current = data;
     
     if (!authToken) {
       toast({
@@ -111,6 +116,40 @@ const ChallengeCreate = () => {
     }
     
     try {
+      // First ensure we have a valid quizId
+      let quizId = data.quizId;
+      
+      // If generating a new quiz, construct quiz data to send
+      if (data.quizType === 'generate') {
+        // For generate mode, ensure we have a topic
+        if (!data.topic || data.topic.trim() === '') {
+          throw new Error('Please provide a topic for the quiz');
+        }
+        
+        // Use the first quiz from the available quizzes as a fallback if no quiz ID
+        if (!quizId) {
+          quizId = userQuizzes[0]?.id;
+          console.log('Using fallback quiz ID:', quizId);
+        }
+      } else {
+        // For existing quiz mode, ensure a quiz is selected
+        if (!quizId) {
+          throw new Error('Please select a quiz');
+        }
+      }
+      
+      // Prepare the challenge data with all required fields
+      const challengeData = {
+        quizId: quizId,
+        receiverEmail: data.recipientEmail,
+        timeLimit: data.numQuestions ? Number(data.numQuestions) * 60 : 300, // Default to 5 minutes if not specified
+        showResultsImmediately: true,
+        message: data.message || '',
+        expiryDays: parseInt(data.expiryDays),
+      };
+      
+      console.log('Sending challenge data:', challengeData);
+      
       // API call to create challenge
       const response = await fetch("/api/challenge/create", {
         method: "POST",
@@ -118,42 +157,87 @@ const ChallengeCreate = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(challengeData)
       });
       
+      // Parse response data
+      const responseData = await response.json();
+      console.log('Challenge API response:', responseData);
+      
+      // Handle server response with more detailed logging
       if (!response.ok) {
-        throw new Error('Failed to create challenge');
+        console.error(`Server returned ${response.status} ${response.statusText}`);
+        console.error('Response body:', responseData);
+        throw new Error(responseData?.message || responseData?.error || `Server error: ${response.status}`);
       }
       
-      const responseData = await response.json();
+      // Check for explicit error indicators in the response
+      if (responseData.error || responseData.success === false) {
+        console.error('API indicated error:', responseData);
+        throw new Error(responseData.message || responseData.error || 'Failed to create challenge');
+      }
       
-      if (responseData && responseData.success) {
+      // If we reached here, the challenge was created successfully
+      console.log('Challenge created successfully:', responseData);
+      
         toast({
           title: "Challenge created!",
-          description: "Your friend has been notified of your challenge.",
+        description: "Your challenge is ready to share with your friend.",
         });
         
         // Set the challenge link for sharing
-        if (responseData.challengeLink) {
-          setChallengeLink(responseData.challengeLink);
-        } else {
-          setChallengeLink(`${window.location.origin}/challenge/accept/${responseData.token}`);
-        }
-        
-        setChallengeCreated(true);
+      if (responseData.challengeToken) {
+        const fullLink = `${window.location.origin}/challenge/accept/${responseData.challengeToken}`;
+        console.log('Setting challenge link:', fullLink);
+        setChallengeLink(fullLink);
+      } else if (responseData.challengeId || responseData.token || responseData.challengeLink) {
+        const linkId = responseData.challengeId || responseData.token || '';
+        const fullLink = `${window.location.origin}/challenge/accept/${linkId}`;
+        console.log('Setting challenge link:', fullLink);
+        setChallengeLink(fullLink);
       } else {
-        throw new Error(responseData?.message || "Failed to create challenge");
+        // Fallback to a default format if no ID is provided
+        const fallbackLink = `${window.location.origin}/challenge/accept/latest`;
+        console.log('Using fallback challenge link:', fallbackLink);
+        setChallengeLink(fallbackLink);
       }
-    } catch (error) {
+      
+      // Update UI state to show success screen
+      setChallengeCreated(true);
+      
+    } catch (error: any) {
       console.error("Error creating challenge:", error);
+      
+      // Store the error message for the retry UI
+      setCreationError(error.message || "Unknown error occurred");
+      
+      // Show a more detailed error message
       toast({
         title: "Challenge creation failed",
-        description: "There was a problem creating your challenge. Please try again.",
+        description: error.message || "There was a problem creating your challenge. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
+  };
+  
+  // Retry function to attempt challenge creation again
+  const handleRetry = async () => {
+    if (!lastSubmittedData.current) {
+      toast({
+        title: "Cannot retry",
+        description: "No previous submission data available",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Clear any previous error
+    setCreationError(null);
+    
+    // Resubmit with the last data
+    await onSubmit(lastSubmittedData.current);
   };
   
   const copyToClipboard = () => {
@@ -162,6 +246,27 @@ const ChallengeCreate = () => {
         title: "Link copied!",
         description: "Challenge link copied to clipboard.",
       });
+    });
+  };
+  
+  // Send email with challenge link directly
+  const sendEmailDirectly = () => {
+    const email = form.getValues("recipientEmail");
+    const subject = "Quiz Challenge Invitation";
+    const body = `Hello,\n\nYou've been challenged to take a quiz! Click the link below to accept:\n\n${challengeLink}\n\n${form.getValues("message") || ''}\n\nThis challenge will expire in ${form.getValues("expiryDays")} days.`;
+    
+    // Use the noreferrer attribute to prevent COOP errors
+    const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // Create an anchor element and trigger it
+    const a = document.createElement('a');
+    a.href = mailtoLink;
+    a.rel = 'noreferrer';
+    a.click();
+    
+    toast({
+      title: "Email client launched",
+      description: "Your default email client should open with the challenge details.",
     });
   };
   
@@ -179,10 +284,10 @@ const ChallengeCreate = () => {
             <div className="bg-primary/10 p-6 rounded-lg text-center">
               <Send className="h-12 w-12 text-primary mx-auto mb-4" />
               <p className="text-gray-700 mb-2">
-                We've sent an invitation to <span className="font-medium">{form.getValues("recipientEmail")}</span>
+                We've prepared a challenge for <span className="font-medium">{form.getValues("recipientEmail")}</span>
               </p>
               <p className="text-gray-600 text-sm">
-                They'll receive an email with a link to take your challenge
+                Use the options below to share the challenge link
               </p>
             </div>
             
@@ -203,9 +308,20 @@ const ChallengeCreate = () => {
               </p>
             </div>
             
+            <div className="flex justify-center">
+              <Button
+                onClick={sendEmailDirectly}
+                className="w-full md:w-auto"
+                variant="outline"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Send via Email
+              </Button>
+            </div>
+            
             <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
               <Mail className="h-4 w-4" />
-              <p>Email sent</p>
+              <p>Ready to share</p>
               <span className="mx-2">•</span>
               <Clock className="h-4 w-4" />
               <p>Expires in {form.getValues("expiryDays")} days</p>
@@ -240,6 +356,30 @@ const ChallengeCreate = () => {
             Create a quiz challenge and send it to a friend
           </CardDescription>
         </CardHeader>
+        
+        {creationError && (
+          <div className="mx-6 mb-4 p-4 border border-red-200 bg-red-50 rounded-lg">
+            <h3 className="text-sm font-semibold text-red-800 mb-2">Challenge Creation Failed</h3>
+            <p className="text-sm text-red-700 mb-3">{creationError}</p>
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleRetry}
+                variant="outline"
+                className="text-xs border-red-300 text-red-600 hover:bg-red-50"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  "Retry Challenge Creation"
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>

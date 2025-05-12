@@ -108,13 +108,7 @@ export const challengeController = {
       
       return res.status(200).json({
         ...challenge,
-        quiz: {
-          id: typedQuizData.id,
-          title: typedQuizData.title,
-          topic: typedQuizData.topic,
-          quizType: typedQuizData.quizType,
-          questionCount: typedQuizData.questions?.length || 0,
-        },
+        quiz: typedQuizData,
         isExpired,
       });
     } catch (error: any) {

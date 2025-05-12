@@ -126,22 +126,22 @@ const ActivityList = () => {
       case 'challenge':
         return 'bg-accent';
       case 'achievement':
-        return 'bg-purple-600';
+        return 'bg-accent';
       default:
-        return 'bg-blue-500';
+        return 'bg-primary';
     }
   };
 
   return (
     <div className="space-y-4">
       {activities.map((activity) => (
-        <div key={activity.id} className="flex items-start p-3 rounded-lg bg-secondary hover:bg-secondary-dark transition-all">
+        <div key={activity.id} className="flex items-start p-3 rounded-lg bg-card hover:bg-muted transition-all">
           <div className={`${getBgColorForActivityType(activity.type)} text-white rounded-lg w-10 h-10 flex items-center justify-center flex-shrink-0`}>
             {getIconForActivityType(activity.type)}
           </div>
           <div className="ml-4">
-            <h4 className="text-gray-800 font-medium">{activity.title}</h4>
-            <p className="text-gray-500 text-sm mt-1">{activity.details}</p>
+            <h4 className="text-card-foreground font-medium">{activity.title}</h4>
+            <p className="text-muted-foreground text-sm mt-1">{activity.details}</p>
           </div>
         </div>
       ))}

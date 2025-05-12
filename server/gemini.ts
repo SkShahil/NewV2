@@ -1,4 +1,10 @@
+// import dotenv from 'dotenv';
+// dotenv.config({ path: require('path').resolve(process.cwd(), '.env') });
+
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+
+// Log key status FROM WITHIN server/gemini.ts
+console.log(`[server/gemini.ts] Initializing. GEMINI_FLASH_API_KEY (first 10): ${process.env.GEMINI_FLASH_API_KEY ? process.env.GEMINI_FLASH_API_KEY.substring(0, 10) + '...' : 'MISSING or empty'}`);
 
 // Initialize the Gemini API with API key from environment variables
 const API_KEY = process.env.GEMINI_FLASH_API_KEY || '';

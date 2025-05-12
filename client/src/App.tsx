@@ -12,6 +12,9 @@ import SimpleNav from "@/components/SimpleNav";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/context/ProtectedRoute";
 import { QuizProvider } from "@/context/QuizContext";
+import Footer from "@/components/Footer";
+import { SettingsProvider } from '@/context/SettingsContext';
+import FloatingSettingsButton from '@/components/FloatingSettingsButton';
 
 // Import pages
 import AboutPage from "@/pages/AboutPage";
@@ -49,183 +52,99 @@ function App() {
   }, [theme]);
   
   return (
-    <TooltipProvider>
-      <Toaster />
-      
-      <SimpleNav />
-      
-      <Switch>
-        <Route path="/" component={HomePage} />
-        <Route path="/about" component={AboutPage} />
-        <Route path="/contact" component={ContactPage} />
-        <Route path="/login" component={Login} />
-        <Route path="/signup" component={Signup} />
+    <SettingsProvider>
+      <TooltipProvider>
+        <Toaster />
         
-        {/* Protected Routes */}
-        <Route path="/dashboard">
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        </Route>
+        <SimpleNav />
         
-        <Route path="/generate-quiz">
-          <ProtectedRoute>
-            <QuizProvider>
-              <GenerateQuiz />
-            </QuizProvider>
-          </ProtectedRoute>
-        </Route>
-        
-        <Route path="/quiz/generate">
-          <ProtectedRoute>
-            <QuizProvider>
-              <GenerateQuiz />
-            </QuizProvider>
-          </ProtectedRoute>
-        </Route>
-        
-        <Route path="/quiz">
-          <ProtectedRoute>
-            <QuizProvider>
-              <QuizPage />
-            </QuizProvider>
-          </ProtectedRoute>
-        </Route>
-        
-        <Route path="/quiz/:id">
-          <ProtectedRoute>
-            <QuizProvider>
-              <QuizPage />
-            </QuizProvider>
-          </ProtectedRoute>
-        </Route>
+        <Switch>
+          <Route path="/" component={HomePage} />
+          <Route path="/about" component={AboutPage} />
+          <Route path="/contact" component={ContactPage} />
+          <Route path="/login" component={Login} />
+          <Route path="/signup" component={Signup} />
+          
+          {/* Protected Routes */}
+          <Route path="/dashboard">
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/generate-quiz">
+            <ProtectedRoute>
+              <QuizProvider>
+                <GenerateQuiz />
+              </QuizProvider>
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/quiz/generate">
+            <ProtectedRoute>
+              <QuizProvider>
+                <GenerateQuiz />
+              </QuizProvider>
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/quiz">
+            <ProtectedRoute>
+              <QuizProvider>
+                <QuizPage />
+              </QuizProvider>
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/quiz/:id">
+            <ProtectedRoute>
+              <QuizProvider>
+                <QuizPage />
+              </QuizProvider>
+            </ProtectedRoute>
+          </Route>
 
-        <Route path="/results/:attemptId">
-          <ProtectedRoute>
-            <QuizProvider>
-              <Results />
-            </QuizProvider>
-          </ProtectedRoute>
-        </Route>
+          <Route path="/results/:attemptId">
+            <ProtectedRoute>
+              <QuizProvider>
+                <Results />
+              </QuizProvider>
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/leaderboard">
+            <ProtectedRoute>
+              <Leaderboard />
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/challenge/create">
+            <ProtectedRoute>
+              <ChallengeCreate />
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/challenge/accept/:token">
+            <ProtectedRoute>
+              <QuizProvider>
+                <ChallengeAccept />
+              </QuizProvider>
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/profile">
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          </Route>
+          
+          <Route component={NotFound} />
+        </Switch>
         
-        <Route path="/leaderboard">
-          <ProtectedRoute>
-            <Leaderboard />
-          </ProtectedRoute>
-        </Route>
-        
-        <Route path="/challenge/create">
-          <ProtectedRoute>
-            <ChallengeCreate />
-          </ProtectedRoute>
-        </Route>
-        
-        <Route path="/challenge/:token">
-          <ProtectedRoute>
-            <QuizProvider>
-              <ChallengeAccept />
-            </QuizProvider>
-          </ProtectedRoute>
-        </Route>
-        
-        <Route path="/profile">
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        </Route>
-        
-        <Route component={NotFound} />
-      </Switch>
-      
-      <footer className="bg-gray-50 border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  className="h-7 w-7 text-primary mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M2 12h1" />
-                  <path d="M6 12h1" />
-                  <path d="M9 12h1" />
-                  <path d="M14 12h1" />
-                  <path d="M18 12h1" />
-                  <path d="M22 12h1" />
-                  <path d="M21 8a9 9 0 0 0-9-9 9.9 9.9 0 0 0-6.29 2.29c-3.2 2.89-3.72 8.67 1.71 14.07a4.5 4.5 0 0 0 6.33 0l.54-.54a4.5 4.5 0 0 1 6.33 0" />
-                  <path d="M21 2c-1.2 1.2-2.5 2-4.5 2s-3.3-.8-4.5-2" />
-                  <path d="M21 16a2 2 0 0 1-2 2h-6" />
-                  <path d="M19 18a2 2 0 0 1-2 2h-2" />
-                </svg>
-                <span className="font-bold text-lg text-primary">MindMash</span>
-              </div>
-              <p className="text-gray-600 mb-4">
-                Empowering learners with AI-powered quizzes and interactive challenges to make education engaging and effective.
-              </p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-gray-400 hover:text-gray-500">
-                  <span className="sr-only">Twitter</span>
-                  <TwitterIcon className="h-6 w-6" />
-                </a>
-                <a href="#" className="text-gray-400 hover:text-gray-500">
-                  <span className="sr-only">GitHub</span>
-                  <GithubIcon className="h-6 w-6" />
-                </a>
-                <a href="#" className="text-gray-400 hover:text-gray-500">
-                  <span className="sr-only">LinkedIn</span>
-                  <LinkedinIcon className="h-6 w-6" />
-                </a>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase mb-4">Features</h3>
-              <ul className="space-y-3">
-                <li>
-                  <a href="#" className="text-base text-gray-500 hover:text-primary">AI Quiz Generation</a>
-                </li>
-                <li>
-                  <a href="#" className="text-base text-gray-500 hover:text-primary">Challenge Friends</a>
-                </li>
-                <li>
-                  <a href="#" className="text-base text-gray-500 hover:text-primary">Leaderboards</a>
-                </li>
-                <li>
-                  <a href="#" className="text-base text-gray-500 hover:text-primary">Performance Analytics</a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase mb-4">Company</h3>
-              <ul className="space-y-3">
-                <li>
-                  <a href="/about" className="text-base text-gray-500 hover:text-primary">About Us</a>
-                </li>
-                <li>
-                  <a href="/contact" className="text-base text-gray-500 hover:text-primary">Contact Us</a>
-                </li>
-                <li>
-                  <a href="#" className="text-base text-gray-500 hover:text-primary">Privacy Policy</a>
-                </li>
-                <li>
-                  <a href="#" className="text-base text-gray-500 hover:text-primary">Terms of Service</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-12 border-t border-gray-200 pt-8">
-            <p className="text-base text-gray-400 text-center">
-              &copy; {new Date().getFullYear()} MindMash. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
-    </TooltipProvider>
+        <Footer />
+        <FloatingSettingsButton />
+      </TooltipProvider>
+    </SettingsProvider>
   );
 }
 
@@ -419,12 +338,21 @@ function HomePage() {
           </h2>
           <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
             <div className="inline-flex rounded-md shadow">
-              <Button size="lg" className="bg-white text-primary hover:bg-gray-50" asChild>
+              <Button 
+                size="lg" 
+                className="bg-white text-primary hover:bg-gray-50 transform transition-transform duration-150 ease-in-out hover:scale-105"
+                asChild
+              >
                 <Link href="/signup">Get started</Link>
               </Button>
             </div>
             <div className="ml-3 inline-flex rounded-md shadow">
-              <Button size="lg" variant="outline" className="bg-primary text-white border-white hover:bg-primary/90" asChild>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="bg-primary text-white border-white hover:bg-primary/90 hover:text-white transform transition-transform duration-150 ease-in-out hover:scale-105"
+                asChild
+              >
                 <Link href="/about">Learn more</Link>
               </Button>
             </div>

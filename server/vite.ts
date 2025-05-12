@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
+// import viteConfig from "../vite.config"; // Commented out: Root vite.config no longer exists
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -23,12 +23,13 @@ export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
-    allowedHosts: true,
+    allowedHosts: true as true,
   };
 
   const vite = await createViteServer({
-    ...viteConfig,
-    configFile: false,
+    // ...viteConfig, // Commented out: Root vite.config no longer exists
+    // Point to the client's vite config, which is now inside the client directory
+    configFile: path.resolve(import.meta.dirname, "..", "client", "vite.config.ts"), 
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
