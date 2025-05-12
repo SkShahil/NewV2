@@ -1,6 +1,34 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+
+# Misc
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Firebase
+quiz-genius-10-5-25-firebase-adminsdk-fbsvc-fa3efd038c.json
+*-firebase-adminsdk-*.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
