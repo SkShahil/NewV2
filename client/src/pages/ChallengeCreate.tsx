@@ -117,7 +117,7 @@ const ChallengeCreate = () => {
     
     try {
       // First ensure we have a valid quizId
-      let quizId = data.quizId;
+      let quizId;
       
       // If generating a new quiz, construct quiz data to send
       if (data.quizType === 'generate') {
@@ -125,6 +125,21 @@ const ChallengeCreate = () => {
         if (!data.topic || data.topic.trim() === '') {
           throw new Error('Please provide a topic for the quiz');
         }
+
+        // Create the new quiz document first
+        console.log('Creating new quiz...');
+        const quizResponse = await fetch("/api/quiz/create", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            topic: data.topic,
+            questionType: data.questionType,
+            numQuestions: data.numQuestions,
+          })
+        });
         
         // Use the first quiz from the available quizzes as a fallback if no quiz ID
         if (!quizId) {
@@ -132,6 +147,18 @@ const ChallengeCreate = () => {
           console.log('Using fallback quiz ID:', quizId);
         }
       } else {
+        // If using an existing quiz, use the selected quizId
+        quizId = data.quizId;
+      }
+
+      // If generating a new quiz, extract the quizId from the response
+      if (data.quizType === 'generate') {
+        const quizResponseData = await quizResponse.json();
+        console.log('New quiz created:', quizResponseData);
+        if (!quizResponse.ok || !quizResponseData.quizId) {
+          throw new Error(quizResponseData?.message || 'Failed to create new quiz');
+        }
+        quizId = quizResponseData.quizId;
         // For existing quiz mode, ensure a quiz is selected
         if (!quizId) {
           throw new Error('Please select a quiz');

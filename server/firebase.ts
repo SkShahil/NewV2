@@ -33,7 +33,7 @@ try {
 // Make sure app is always defined to avoid TypeScript errors
 const firebaseApp = app as any;
 
-// Export Firebase services with fallbacks
+// Export Firebase Auth services (using mock for now as per original file, assuming this will be replaced later if needed)
 export const auth = {
   verifyIdToken: async (token: string) => {
     try {
@@ -84,21 +84,8 @@ export const auth = {
   }
 };
 
-// Create a dummy Firestore implementation that doesn't crash
-export const db = {
-  collection: (collectionPath: string) => ({
-    doc: (docId?: string) => ({
-      set: async () => ({ id: docId || 'dummy-id' }),
-      update: async () => ({ success: true }),
-      get: async () => ({ exists: false, data: () => ({}) })
-    }),
-    where: () => ({
-      limit: () => ({
-        get: async () => ({ empty: true, docs: [] })
-      })
-    })
-  })
-};
+// Initialize and export Firestore
+export const db = getFirestore(firebaseApp);
 
 export const serverTimestamp = FieldValue.serverTimestamp;
 
@@ -150,7 +137,7 @@ export async function createUser(email: string, password: string, displayName?: 
  */
 export async function createUserDocument(uid: string, userData: any) {
   try {
-    const userRef = db.collection('users').doc(uid);
+    const userRef = db.collection('users').doc(uid); // Use real Firestore instance
     await userRef.set({
       ...userData,
       createdAt: serverTimestamp(),
@@ -167,7 +154,7 @@ export async function createUserDocument(uid: string, userData: any) {
  */
 export async function createQuizDocument(quizData: any) {
   try {
-    const quizRef = db.collection('quizzes').doc();
+    const quizRef = db.collection('quizzes').doc(); // Use real Firestore instance
     await quizRef.set({
       ...quizData,
       createdAt: serverTimestamp(),
@@ -184,7 +171,7 @@ export async function createQuizDocument(quizData: any) {
  */
 export async function getQuizDocument(quizId: string) {
   try {
-    const quizRef = db.collection('quizzes').doc(quizId);
+    const quizRef = db.collection('quizzes').doc(quizId); // Use real Firestore instance
     const quizDoc = await quizRef.get();
     
     if (!quizDoc.exists) {

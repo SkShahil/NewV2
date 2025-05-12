@@ -97,6 +97,37 @@ export const quizController = {
       });
     }
   },
+
+  /**
+   * Create a new quiz document directly
+   */
+  createQuiz: async (req: Request, res: Response) => {
+    try {
+      const { topic, questionType, numQuestions, questions } = req.body;
+
+      if (!topic || !questions || !Array.isArray(questions) || questions.length === 0) {
+        return res.status(400).json({
+          message: 'Topic and questions array are required',
+        });
+      }
+
+      const quizData = {
+        title: `${topic} Quiz`,
+        topic,
+        questionType: questionType || 'auto',
+        numQuestions: numQuestions || questions.length,
+        questions,
+        isPublic: false, // Assuming quizzes created this way are private initially
+      };
+
+      const newQuiz = await createQuizDocument(quizData);
+
+ return res.status(201).json({ message: 'Quiz created successfully', quizId: newQuiz.id });
+    } catch (error: any) {
+      console.error('Error creating quiz:', error);
+      return res.status(500).json({ message: 'Failed to create quiz', error: error.message });
+    }
+  },
   
   /**
    * Get a quiz by ID

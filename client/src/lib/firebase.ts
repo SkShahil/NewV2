@@ -97,17 +97,18 @@ class FirebaseError extends Error {
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAmOlgQMxLZ7MR5y1CDA3bLaZApP7ihzrA",
-  authDomain: "quiz-genius-10-5-25.firebaseapp.com",
-  projectId: "quiz-genius-10-5-25",
-  storageBucket: "quiz-genius-10-5-25.firebasestorage.app",
-  messagingSenderId: "741680955848",
-  appId: "1:741680955848:web:bcc92f8bd29ed538eec0fd",
-  measurementId: "G-PZ5T6XVKH1"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID, 
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID // Load from env
 };
 
 // Debug Firebase config to ensure environment variables are loaded
 console.log("Firebase config initialized with:", {
+  authDomainExists: !!import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   apiKeyExists: !!import.meta.env.VITE_FIREBASE_API_KEY,
   projectIdExists: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
   appIdExists: !!import.meta.env.VITE_FIREBASE_APP_ID,
@@ -120,7 +121,7 @@ console.log("Current domain for Firebase Auth:", window.location.hostname);
 const app = initializeApp(firebaseConfig);
 
 // Initialize services
-const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
+const analytics = typeof window !== 'undefined' && firebaseConfig.measurementId ? getAnalytics(app) : null;
 const db = getFirestore(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
