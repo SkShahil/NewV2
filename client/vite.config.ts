@@ -7,6 +7,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
   plugins: [
+
     react(),
     runtimeErrorOverlay(),
     // Cartographer plugin might be Replit-specific, conditionally excluding for local
