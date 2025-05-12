@@ -69,6 +69,7 @@ app.use((req, res, next) => {
       log(`Server running on http://localhost:${freePort}`);
       log(`Environment: ${process.env.NODE_ENV}`);
     });
+    });
 
   } catch (error) {
     log(`Failed to start server: ${error}`);

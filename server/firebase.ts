@@ -6,25 +6,30 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 // For Firebase Admin SDK, we'll use a more flexible approach to handle credentials
 let app;
 
-// Simplified initialization that's most reliable
+// Recommended initialization using a service account key file
 try {
-  // Just initialize with the project ID - more reliable than using service accounts
+  const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+  if (!serviceAccountPath) {
+    throw new Error('GOOGLE_APPLICATION_CREDENTIALS environment variable is not set.');
+  }
+
+  // Use require for dynamic loading of the service account file
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const serviceAccount = require(serviceAccountPath);
+
   app = initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'mindmash-demo'
+    credential: cert(serviceAccount),
+    projectId: serviceAccount.project_id, // Use project_id from the service account file
   });
-  console.log('Firebase Admin SDK initialized with project ID only');
+  console.log('Firebase Admin SDK initialized successfully using service account.');
 } catch (error) {
-  console.error('Error initializing Firebase Admin SDK:', error);
-  console.warn('Firebase Admin SDK initialization failed - database operations may fail');
-  
-  try {
-    // Create a fallback app to prevent fatal errors
-    app = initializeApp({
-      projectId: 'mindmash-demo'
-    }, 'backup-app');
-    console.log('Created fallback Firebase app');
-  } catch (fallbackError) {
-    console.error('Even fallback app initialization failed:', fallbackError);
+  console.error('Fatal error initializing Firebase Admin SDK:', error);
+  console.error('Ensure GOOGLE_APPLICATION_CREDENTIALS environment variable is set correctly and the service account key file exists and is valid.');
+  // Exit the process as Firebase Admin SDK is crucial for server operations
+  process.exit(1);
+  // Set the app to a dummy value to prevent TypeScript errors in unreachable code
+  if (process.env.NODE_ENV !== 'test') { // Avoid exiting during tests
     // Set the app to a dummy value to prevent null reference errors
     app = {} as any;
   }

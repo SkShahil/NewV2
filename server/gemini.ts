@@ -97,6 +97,8 @@ export async function generateQuiz(params: QuizParams): Promise<Question[]> {
     const numQuestions = params.numQuestions || 10;
     console.log(`Building prompt for ${quizType} quiz with ${numQuestions} questions`);
     const prompt = buildQuizPrompt(params.topic, quizType as 'multiple-choice' | 'true-false' | 'short-answer', numQuestions);
+
+    console.log('Prompt being sent to Gemini:', prompt);
     
     // Generate content with the model
     console.log('Sending request to Gemini API');
@@ -112,6 +114,7 @@ export async function generateQuiz(params: QuizParams): Promise<Question[]> {
     });
     
     console.log('Received response from Gemini API');
+
     const response = result.response;
     const text = response.text();
     console.log('Response text length:', text.length);
@@ -120,8 +123,15 @@ export async function generateQuiz(params: QuizParams): Promise<Question[]> {
     console.log('Parsing response to extract questions');
     const questions = parseQuizResponse(text, quizType as 'multiple-choice' | 'true-false' | 'short-answer');
     console.log(`Successfully parsed ${questions.length} questions`);
+
     return questions;
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      console.error('JSON Parsing Error in generateQuiz:', error.message);
+      // Log the raw text that caused the parsing error if available
+      // (This would require capturing the text before parsing in parseQuizResponse)
+      // console.error('Raw text that failed to parse:', text);
+    }
     console.error('Error generating quiz with Gemini:', error);
     console.warn('Falling back to sample quiz data');
     // Provide sample data on error

@@ -140,19 +140,6 @@ const ChallengeCreate = () => {
             numQuestions: data.numQuestions,
           })
         });
-        
-        // Use the first quiz from the available quizzes as a fallback if no quiz ID
-        if (!quizId) {
-          quizId = userQuizzes[0]?.id;
-          console.log('Using fallback quiz ID:', quizId);
-        }
-      } else {
-        // If using an existing quiz, use the selected quizId
-        quizId = data.quizId;
-      }
-
-      // If generating a new quiz, extract the quizId from the response
-      if (data.quizType === 'generate') {
         const quizResponseData = await quizResponse.json();
         console.log('New quiz created:', quizResponseData);
         if (!quizResponse.ok || !quizResponseData.quizId) {
@@ -160,9 +147,13 @@ const ChallengeCreate = () => {
         }
         quizId = quizResponseData.quizId;
         // For existing quiz mode, ensure a quiz is selected
-        if (!quizId) {
-          throw new Error('Please select a quiz');
-        }
+      } else {
+        // If using an existing quiz, use the selected quizId
+        quizId = data.quizId;
+      }
+
+      if (!quizId) {
+        throw new Error('No quiz ID available for challenge creation.');
       }
       
       // Prepare the challenge data with all required fields
