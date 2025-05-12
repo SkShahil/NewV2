@@ -1,9 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import dotenv from "dotenv";
 // Assuming @replit/vite-plugin-runtime-error-modal is installed in the root node_modules
 // If not, this might need adjustment or the plugin might be removed for local dev
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+
+dotenv.config();
+
+console.log("Loaded environment variables:", process.env);
 
 export default defineConfig({
   plugins: [
